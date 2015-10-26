@@ -3,6 +3,8 @@ import org.junit.runners.*;
 import org.junit.runner.*;
 import org.junit.runner.notification.*;
 import java.lang.*;
+import java.net.*;
+import java.io.*;
 import java.util.*;
 import java.util.stream.*;
 import java.util.concurrent.Callable;
@@ -33,17 +35,61 @@ public class RunJunit {
 
   private static void executeTest(String testClassName) throws Exception {
     try {
-    System.out.println("Testing class: " + testClassName);
-    Result result = executeTestClass(Class.forName(testClassName));
-    printFailures(result.getFailures());
-    printSummary(result);
-    exit(result);
+      System.out.println("Testing class: " + testClassName);
+      Result result = executeTestClass(findClass(testClassName));
+      printFailures(result.getFailures());
+      printSummary(result);
+      exit(result);
+    } catch(ClassNotFoundException e) {
+      System.out.println("Test class " + testClassName + " does not exist.");
+      System.exit(1);
     } catch (TimeoutException e) {
       e.printStackTrace();
       System.exit(1);
     }
   }
 
+  private static Class<?> findClass(String simpleClassName) throws Exception {
+    ClassLoader classLoader = RunJunit.class.getClassLoader();
+    Enumeration<URL> roots = classLoader.getResources("");
+    List<String> classFiles = new ArrayList<>();
+    while(roots.hasMoreElements()) {
+      URL url = roots.nextElement();
+      File file = new File(url.getPath());
+      classFiles.addAll(getAllClassFiles(file, file));
+    }
+
+    Optional<String> qClassName = classFiles.stream()
+      .filter(className -> className.endsWith(simpleClassName))
+      .findFirst();
+    if(qClassName.isPresent()) {
+      return Class.forName(qClassName.get());
+    } else {
+      throw new RuntimeException("No class for test name: " + simpleClassName);
+    }
+  }
+
+  private static List<String> getAllClassFiles(File file, File rootDir) {
+    List<String> classFiles = new ArrayList<>();
+    if(file.getName().endsWith(".class")) {
+      String relativePath = getRelativePath(file, rootDir);
+      String qClassName = relativePath.replace(".class", "").replace("/", ".");
+      classFiles.add(qClassName);
+      return classFiles;
+    }
+
+    if(file.isDirectory()) {
+      for(File content : file.listFiles()) {
+        classFiles.addAll(getAllClassFiles(content, rootDir));
+      }
+    }
+
+    return classFiles;
+  }
+
+  private static String getRelativePath(File file, File rootDir) {
+    return rootDir.toURI().relativize(file.toURI()).getPath();
+  }
 
   private static Result executeTestClass(Class<?> testClass) throws Exception {
     ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -69,11 +115,11 @@ public class RunJunit {
 
   public static void printFailures(List<Failure> failures) {
     for(Failure failure : failures) {
-      System.out.println(failure.toString());
+      System.out.println(failure.getDescription());
       if(!(failure.getException() instanceof AssertionError)) {
         System.out.println(toShortTrace(failure.getTrace(), 20));
       } else {
-        System.out.println(toShortTrace(failure.getTrace(), 8));
+        System.out.println(toShortTrace(failure.getTrace(), 10));
       }
     }
   }
