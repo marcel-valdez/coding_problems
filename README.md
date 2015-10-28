@@ -1,12 +1,56 @@
-This repository contains coding problems and suggested exercises from the book
-'cracking the coding interview'.
+# What is this?
 
-src/ the solutions
-test/ contains the automated tests for all the files in src
+It is a set of tests and solutions to the coding problems in the book
+"Cracking the Coding Interview".
 
-Because java is a language that many shops will let you use as the language
-of choice for the interview, that is the language used for this project.
+## Requirements
+
+- Java 8
+- ruby 1.9+
 
 
-Ruby's Guard is used to execute the automated tests in a continuous fashion,
-and rake is used to build the java files every time.
+## Structure
+
+### Solutions are under the src directory
+
+```
+/src/Chapter1.java
+/src/Chapter2.java
+...
+/src/ChapterN.java
+```
+
+### Tests are under the test directory
+
+```
+/test/Chapter1Test.java
+/test/Chapter2Test.java
+...
+/test/ChapterNTest.java
+```
+
+## How To
+
+### Work on solutions
+
+To start working on solutions you need the continuous
+runner to execute. It will execute the test of the
+corresponding solution that you modified, or if the
+test is modified, it will execute the test that was
+modified, there is currently no way to execute all tests
+or to execute tests that correspond to utility files,
+this can be done later.
+
+
+```bash
+# install all required gems
+bundle install
+# execute the continuous runner (Guard)
+bundle exec guard
+```
+
+## TODO Notes
+
+- If a class Xxx in the src folder is modified, and it does
+  not have a corresponding XxxTest class, then all test
+  classes should be executed.
