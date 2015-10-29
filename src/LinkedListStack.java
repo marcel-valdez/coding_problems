@@ -39,4 +39,9 @@ public class LinkedListStack<T> {
   public int size() {
     return this.size;
   }
+
+  public String toString() {
+    if(this.head == null) { return "<empty>"; }
+    else { return this.head.toString(); }
+  }
 }

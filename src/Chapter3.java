@@ -1,5 +1,7 @@
 package chapter3;
 
+import static debug.Debugger.DEBUG;
+
 import java.lang.*;
 import java.util.*;
 
@@ -17,7 +19,6 @@ class CoordinatedStackMaker {
     return stacks;
   }
 }
-
 
 class CoordinatedArrayStack {
   private final Object[] storage;
@@ -68,7 +69,6 @@ class CoordinatedArrayStack {
     }
   }
 }
-
 
 // push:4 - min=4 | 4             | 4
 // pusn:6 - min=4 | 4->6          | 4->6
@@ -314,5 +314,301 @@ class QueueMadeOfStacks<T> {
     if(popStack.size() == 0) {
       while(pushStack.size() > 0) { popStack.push(pushStack.pop()); }
     }
+  }
+}
+
+
+class StackSorter {
+  private static int LEFT = 0;
+  private static int RIGHT = 1;
+
+  public void sort(LinkedListStack<Integer> stack) {
+    if(stack == null) { throw new RuntimeException("Null stack!"); }
+    if(stack.size() == 0) { return; }
+
+    LinkedListStack<Integer> aux = new LinkedListStack<>();
+    sort(stack, aux, new int[] { -1, -1 }, "ASC");
+  }
+
+  public int[] partition(
+    Integer pivot,
+    LinkedListStack<Integer> left,
+    LinkedListStack<Integer> right,
+    int leftSize,
+    String order) {
+
+    if(isEmpty(left) || leftSize == 0) {
+      return new int[] { 0, 0 };
+    }
+
+    boolean leftSizeUndetermined = leftSize < 0;
+    int[] foundSizes = new int[2];
+    int rightSize = 0;
+    int i = 0;
+    DEBUG.println("\npartition pivot: " + pivot + ", left: " + left + ", leftSize: " + leftSize);
+    DEBUG.println("lo: " + left + ", hi: " + right);
+
+    while(
+      !isEmpty(left) &&
+      comparePivot(pivot, left.peek(), order) &&
+      (leftSize > 0 || leftSizeUndetermined)
+      ) {
+      right.push(left.pop());
+      rightSize++;
+      leftSize--;
+    }
+    if(isEmpty(left) || leftSize == 0) {
+      // everything was larger than the pivot
+      // eventually we will hit this
+      foundSizes[LEFT] = 0;
+      foundSizes[RIGHT] = rightSize;
+    } else {
+      DEBUG.println("Stopped at: " + left.peek() + " with leftSize: " + leftSize);
+      DEBUG.println("lo: " + left + ", hi: " + right);
+
+      Integer lessThanPivot = left.pop();
+      int[] partSizes = partition(pivot, left, right, leftSize - 1, order);
+      left.push(lessThanPivot);
+      foundSizes[LEFT] = partSizes[LEFT] + 1;
+      foundSizes[RIGHT] = partSizes[RIGHT] + rightSize;
+    }
+
+    return foundSizes;
+  }
+
+  private void sort(LinkedListStack<Integer> left, LinkedListStack<Integer> right, int[] sizes, String order) {
+    DEBUG.println("--- sort sizes[LEFT]: "+ sizes[LEFT] + ", sizes[RIGHT]: " + sizes[RIGHT] + " -------");
+    if(sizes[LEFT] == 1 || sizes[LEFT] == 0 || isEmpty(left)) {
+      return;
+    }
+
+    if(sizes[LEFT] == 2) {
+      Integer first = left.pop();
+      Integer second = left.pop();
+
+      if(areSorted(first, second, order)) {
+        left.push(second);  // if they are already sorted, then
+        left.push(first); // put them back the way they were
+      } else {
+        left.push(first);
+        left.push(second);
+      }
+
+      return;
+    }
+
+    Integer pivot = left.pop();
+    int[] partitionSizes = partition(pivot, left, right, sizes[LEFT] - 1, order);
+    DEBUG.println("--- pivot: " + pivot + ", left: " + left + ", right: " + right);
+    // sort left numbers
+    sort(left, right, partitionSizes, order);
+    // sort right numbers in opposite order so that we can push them back in correct order
+    String rightOrder = oppositeOrder(order);
+    sort(right, left, new int[] { partitionSizes[RIGHT], partitionSizes[LEFT] }, rightOrder);
+
+    DEBUG.println("merge: " + left + " =>" + pivot + "<= " + right);
+    mergePartitions(left, pivot, right, partitionSizes[RIGHT]);
+  }
+
+  private void mergePartitions(
+    LinkedListStack<Integer> left,
+    Integer pivot,
+    LinkedListStack<Integer> right,
+    int rightSize) {
+    // merged results end up in the left stack
+    left.push(pivot);
+    for(int i = 0; i < rightSize; i++) {
+      left.push(right.pop());
+    }
+  }
+
+  private boolean comparePivot(int pivot, int b, String order) {
+    if(order.equals("ASC")) { return b >= pivot; }
+    if(order.equals("DESC")) { return b <= pivot; }
+    throw new IllegalStateException("Invalid order: " + order);
+  }
+
+  private boolean areSorted(int first, int second, String order) {
+    boolean ascending = order.equals("ASC");
+    boolean firstIsGreater = first > second;
+    boolean descending = !ascending;
+    boolean firstIsSmaller = !firstIsGreater;
+    return (firstIsGreater && ascending) || (firstIsSmaller && descending);
+  }
+
+  private static String oppositeOrder(String order) {
+    return order.equals("ASC") ? "DESC" : "ASC";
+  }
+  private boolean isEmpty(LinkedListStack<Integer> stack) {
+    return stack.size() == 0;
+  }
+}
+
+
+class AnimalShelter {
+
+  private AnimalLink oldest;
+  private AnimalLink youngest;
+
+  private AnimalLink oldestCat;
+  private AnimalLink oldestDog;
+  private AnimalLink youngestCat;
+  private AnimalLink youngestDog;
+
+  public void enqueue(Animal animal) {
+    AnimalLink animalLink = new AnimalLink(animal);
+    if(oldest == null) { youngest = oldest = animalLink; }
+    else {
+      animalLink.prevAnimal(youngest);
+      youngest.nextAnimal(animalLink);
+      youngest = animalLink;
+    }
+
+    if(animal.type().equals("cat")) {
+      if(oldestCat == null) { youngestCat = oldestCat = animalLink; }
+      else {
+        animalLink.prevOfType(youngestCat);
+        youngestCat.nextOfType(animalLink);
+        youngestCat = animalLink;
+      }
+    } else { // assume it is a dog
+      if(oldestDog == null) { youngestDog = oldestDog = animalLink; }
+      else {
+        animalLink.prevOfType(youngestDog);
+        youngestDog.nextOfType(animalLink);
+        youngestDog = animalLink;
+      }
+    }
+  }
+
+  public Optional<Animal> dequeue() {
+    if(oldest == null) { return Optional.<Animal>empty(); }
+
+    if(oldest == oldestDog) {
+      return dequeueDog();
+    } else if (oldest == oldestCat) {
+      return dequeueCat();
+    } else {
+      throw new RuntimeException(
+        "Oldest was neither oldestCat nor oldestDog. \n" +
+        "oldest: " + oldest +  "\n" +
+        "oldestDog: " + oldestDog + "\n" +
+        "oldestCat: " + oldestCat + "\n");
+    }
+  }
+
+  public Optional<Animal> dequeueDog() {
+    DEBUG.println("Removing dog!");
+    if(oldestDog == null) { return Optional.<Animal>empty(); }
+
+    Optional<Animal> result = Optional.of(oldestDog.getAnimal());
+
+    dequeueAnimal(oldestDog);
+
+    if(oldestDog == youngestDog) { youngestDog = null; }
+    oldestDog = oldestDog.nextOfType();
+
+    return result;
+  }
+
+  public Optional<Animal> dequeueCat() {
+    DEBUG.println("Removing cat!");
+    if(oldestCat == null) { return Optional.<Animal>empty(); }
+
+    Optional<Animal> result = Optional.of(oldestCat.getAnimal());
+    dequeueAnimal(oldestCat);
+
+    if(oldestCat == youngestCat) { youngestCat = null; }
+    oldestCat = oldestCat.nextOfType();
+
+    return result;
+  }
+
+  private void dequeueAnimal(AnimalLink animalLink) {
+    if(animalLink.prevAnimal() != null) {
+      animalLink.prevAnimal().nextAnimal(animalLink.nextAnimal());
+    }
+
+    if(animalLink.nextAnimal() != null) {
+      animalLink.nextAnimal().prevAnimal(animalLink.prevAnimal());
+    }
+
+    if(animalLink.nextOfType() != null) {
+      animalLink.nextOfType().prevOfType(null);
+    }
+
+    if(animalLink == oldest) {
+      oldest = animalLink.nextAnimal();
+    }
+
+    if(animalLink == youngest) {
+      youngest = animalLink.prevAnimal();
+    }
+  }
+
+  static class AnimalLink {
+    private final Animal animal;
+    private AnimalLink nextOfType;
+    private AnimalLink nextAnimal;
+
+    private AnimalLink prevOfType;
+    private AnimalLink prevAnimal;
+
+    public AnimalLink(Animal animal) {
+      this.animal = animal;
+    }
+
+    public Animal getAnimal() { return this.animal; }
+
+    private void nextOfType(AnimalLink next) {
+      this.nextOfType = next;
+    }
+
+    public AnimalLink nextOfType() {
+      return this.nextOfType;
+    }
+
+    public void nextAnimal(AnimalLink next) {
+      this.nextAnimal = next;
+    }
+
+    public AnimalLink nextAnimal() {
+      return this.nextAnimal;
+    }
+
+    private void prevOfType(AnimalLink prev) {
+      this.prevOfType = prev;
+    }
+
+    public AnimalLink prevOfType() {
+      return this.prevOfType;
+    }
+
+    public void prevAnimal(AnimalLink prev) {
+      this.prevAnimal = prev;
+    }
+
+    public AnimalLink prevAnimal() {
+      return this.prevAnimal;
+    }
+
+    public String toString() { return this.getAnimal().toString(); }
+  }
+
+  static class Animal {
+    private static volatile int COUNT = 0;
+
+    private final int age;
+    private final String type;
+
+    public Animal(String type) {
+      this.type = type;
+      this.age = ++COUNT;
+    }
+
+    public int age() { return this.age; }
+    public String type() { return this.type; }
+
+    public String toString() { return "{ age: " + age + ", type: " + type + " }"; }
   }
 }

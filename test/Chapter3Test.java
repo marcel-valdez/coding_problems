@@ -1,5 +1,6 @@
 package chapter3;
 
+import static debug.Debugger.DEBUG;
 import static org.hamcrest.Matcher.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.core.Is.*;
@@ -239,5 +240,129 @@ public class Chapter3Test extends ChapterTestBase {
     areEqual(queue.dequeue(), 3);
     areEqual(queue.size(), 1);
 
+  }
+
+  @Test
+  public void testStackSorter() {
+    // given
+    StackSorter sorter = new StackSorter();
+    LinkedListStack<Integer> stack = new LinkedListStack<>();
+    int[] input = { 3, 5, 2, 1, 8, 9, 4 };
+    pushAll(stack, input);
+    int[] expected = { 9, 8, 5, 4, 3, 2, 1 };
+
+    // when
+    sorter.sort(stack);
+    // then
+    int[] actual = popAll(stack);
+    areEqual(actual, expected);
+  }
+
+  private static int[] popAll(LinkedListStack<Integer> stack) {
+    int[] result = new int[stack.size()];
+    for(int i = 0; i < result.length; i++) {
+      result[i] = stack.pop();
+    }
+
+    return result;
+  }
+
+  private static void pushAll(LinkedListStack<Integer> stack, int ... input) {
+    for(int number : input) {
+      stack.push(number);
+    }
+  }
+
+  @Test
+  public void testPivot() {
+    // given
+    LinkedListStack<Integer> lo = new LinkedListStack<>();
+    pushAll(lo, 9, 1, 2, 8, 7, 3, 4, 6);
+    LinkedListStack<Integer> hi = new LinkedListStack<>();
+    pushAll(hi, 19, 18, 11, 12, 17, 16, 13, 14);
+
+    StackSorter sorter = new StackSorter();
+    // when
+    int[] sizes = sorter.partition(5, lo, hi, -1, "ASC");
+    // then
+    int[] expectedLo = { 4, 3, 2, 1 };
+    int[] expectedHi = { 9, 8, 7, 6, 14, 13, 16, 17, 12, 11, 18, 19 };
+    areEqual(popAll(lo), expectedLo);
+    areEqual(popAll(hi), expectedHi);
+    areEqual(sizes[0], 4);
+    areEqual(sizes[1], 4);
+  }
+
+  @Test
+  public void testPivotSubset() {
+    // given
+    LinkedListStack<Integer> lo = new LinkedListStack<>();
+    pushAll(lo, 9, 1, 2, 8, 7, 3, 4, 6);
+    LinkedListStack<Integer> hi = new LinkedListStack<>();
+
+    StackSorter sorter = new StackSorter();
+    // when
+    int[] sizes = sorter.partition(5, lo, hi, 5, "ASC");
+    // then
+    int[] expectedLo = { 4, 3, 2, 1, 9 };
+    int[] expectedHi = { 8, 7, 6 };
+    areEqual(popAll(lo), expectedLo);
+    areEqual(popAll(hi), expectedHi);
+    areEqual(sizes[0], 2);
+    areEqual(sizes[1], 3);
+  }
+
+  @Test
+  public void testAnimalShelter() {
+    // given
+    AnimalShelter shelter = new AnimalShelter();
+    // when
+    shelter.enqueue(cat());
+    shelter.enqueue(cat());
+    shelter.enqueue(dog());
+    shelter.enqueue(cat());
+    shelter.enqueue(dog());
+    shelter.enqueue(dog());
+
+    // then
+    AnimalShelter.Animal animal = shelter.dequeue().get();
+    areEqual(animal.age(), 1);
+    areEqual(animal.type(), "cat");
+
+    animal = shelter.dequeueDog().get();
+    areEqual(animal.age(), 3);
+    areEqual(animal.type(), "dog");
+
+    animal = shelter.dequeue().get();
+    areEqual(animal.age(), 2);
+    areEqual(animal.type(), "cat");
+
+    // when
+    shelter.enqueue(cat());
+
+    // then
+    animal = shelter.dequeueCat().get();
+    areEqual(animal.age(), 4);
+    areEqual(animal.type(), "cat");
+
+    animal = shelter.dequeueCat().get();
+    areEqual(animal.age(), 7);
+    areEqual(animal.type(), "cat");
+
+    animal = shelter.dequeue().get();
+    areEqual(animal.age(), 5);
+    areEqual(animal.type(), "dog");
+
+    animal = shelter.dequeue().get();
+    areEqual(animal.age(), 6);
+    areEqual(animal.type(), "dog");
+  }
+
+  private static AnimalShelter.Animal cat() {
+    return new AnimalShelter.Animal("cat");
+  }
+
+  private static AnimalShelter.Animal dog() {
+    return new AnimalShelter.Animal("dog");
   }
 }
