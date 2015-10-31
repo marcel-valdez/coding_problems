@@ -45,4 +45,19 @@ public abstract class ChapterTestBase {
   protected void areNotEqual(Object actual, Object expected) {
     errors.checkThat(actual, not(equalTo(expected)));
   }
+
+  protected static int[] popAll(LinkedListStack<Integer> stack) {
+    int[] result = new int[stack.size()];
+    for(int i = 0; i < result.length; i++) {
+      result[i] = stack.pop();
+    }
+
+    return result;
+  }
+
+  protected static void pushAll(LinkedListStack<Integer> stack, int ... input) {
+    for(int number : input) {
+      stack.push(number);
+    }
+  }
 }

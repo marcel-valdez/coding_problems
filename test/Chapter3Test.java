@@ -258,21 +258,6 @@ public class Chapter3Test extends ChapterTestBase {
     areEqual(actual, expected);
   }
 
-  private static int[] popAll(LinkedListStack<Integer> stack) {
-    int[] result = new int[stack.size()];
-    for(int i = 0; i < result.length; i++) {
-      result[i] = stack.pop();
-    }
-
-    return result;
-  }
-
-  private static void pushAll(LinkedListStack<Integer> stack, int ... input) {
-    for(int number : input) {
-      stack.push(number);
-    }
-  }
-
   @Test
   public void testPivot() {
     // given

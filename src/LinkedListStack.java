@@ -40,6 +40,10 @@ public class LinkedListStack<T> {
     return this.size;
   }
 
+  public boolean isEmpty() {
+    return this.size() == 0;
+  }
+
   public String toString() {
     if(this.head == null) { return "<empty>"; }
     else { return this.head.toString(); }
