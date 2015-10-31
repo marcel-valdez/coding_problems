@@ -13,10 +13,42 @@ public class BinaryTreeNode<T> {
   public void parent(BinaryTreeNode<T> parent) { this.parent = parent; }
   public BinaryTreeNode<T> parent() { return this.parent; }
 
-  public void left(BinaryTreeNode<T> left) { this.left = left; }
+  public void left(BinaryTreeNode<T> left) {
+    if(left != null) {
+      left.parent(this);
+    }
+
+    this.left = left;
+  }
+
+  public BinaryTreeNode<T> removeLeft() {
+    BinaryTreeNode<T> node = this.left;
+
+    this.left.parent(null);
+    this.left = null;
+
+    return node;
+  }
+
   public BinaryTreeNode<T> left() { return this.left; }
 
-  public void right(BinaryTreeNode<T> right) { this.right = right; }
+  public void right(BinaryTreeNode<T> right) {
+    if(right != null) {
+      right.parent(this);
+    }
+
+    this.right = right;
+  }
+
+  public BinaryTreeNode<T> removeRight() {
+    BinaryTreeNode<T> node = this.right;
+
+    this.right.parent(null);
+    this.right = null;
+
+    return node;
+  }
+
   public BinaryTreeNode<T> right() { return this.right; }
 
   public String toString() {
