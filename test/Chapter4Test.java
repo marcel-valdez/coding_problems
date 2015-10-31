@@ -204,4 +204,200 @@ public class Chapter4Test extends ChapterTestBase {
     areEqual(result.get(3).contains(one.value()), true);
     areEqual(result.get(3).size(), 2);
   }
+
+  @Test
+  public void testBinarySearchTreeChecker() {
+    // given
+    BinaryTreeNode<Integer> one = node(1);
+    BinaryTreeNode<Integer> two = node(2);
+    BinaryTreeNode<Integer> three = node(3);
+    BinaryTreeNode<Integer> four = node(4);
+    BinaryTreeNode<Integer> five = node(5);
+    BinaryTreeNode<Integer> six = node(6);
+    BinaryTreeNode<Integer> seven = node(7);
+    BinaryTreeNode<Integer> eight = node(8);
+    BinaryTreeNode<Integer> nine = node(9);
+
+    five.left(three);five.right(seven);
+
+    three.left(two);three.right(four);
+    seven.left(six);seven.right(nine);
+
+    two.left(one);nine.left(eight);
+    BinarySearchTreeChecker checker = new BinarySearchTreeChecker();
+
+    // when given a valid search tree
+    boolean actual = checker.check(five);
+
+    // then
+    areEqual(actual, true);
+
+    // when it becomes a non-search tree
+    three.left(null); three.right(two);
+    // then
+    areEqual(checker.check(five), false);
+  }
+
+  @Test
+  public void testNextInOrderNodeFinder() {
+    // given
+    BinaryTreeNode<Integer> one = node(1);
+    BinaryTreeNode<Integer> two = node(2);
+    BinaryTreeNode<Integer> three = node(3);
+    BinaryTreeNode<Integer> four = node(4);
+    BinaryTreeNode<Integer> five = node(5);
+    BinaryTreeNode<Integer> six = node(6);
+    BinaryTreeNode<Integer> seven = node(7);
+    BinaryTreeNode<Integer> eight = node(8);
+    BinaryTreeNode<Integer> nine = node(9);
+
+    five.left(three);five.right(seven);
+
+    three.left(two);three.right(four);
+    seven.left(six);seven.right(nine);
+
+    two.left(one);nine.left(eight);
+
+    NextInOrderNodeFinder finder = new NextInOrderNodeFinder();
+
+    // when given the root then find left-most leaf on right sub-tree
+    areEqual(finder.find(five), six);
+    // when the left-most child get its parent
+    areEqual(finder.find(one), two);
+    // when given a middle node, find left-most leaf on right sub-tree
+    areEqual(finder.find(seven), eight);
+    // when given the last node, return null
+    areEqual(finder.find(nine), null);
+    // when given the last node, return null
+    areEqual(finder.find(four), five);
+  }
+
+
+  @Test
+  public void testHashedCommonAncestorFinder() {
+    checkCommonAncestorFinder(new HashedCommonAncestorFinder());
+  }
+
+  @Test
+  public void testTraversedCommonAncestorFinder() {
+    checkCommonAncestorFinder(new TraversedCommonAncestorFinder());
+  }
+
+  public void checkCommonAncestorFinder(CommonAncestorFinder finder) {
+    // given
+    BinaryTreeNode<Integer> one = node(1);
+    BinaryTreeNode<Integer> two = node(2);
+    BinaryTreeNode<Integer> three = node(3);
+    BinaryTreeNode<Integer> four = node(4);
+    BinaryTreeNode<Integer> five = node(5);
+    BinaryTreeNode<Integer> six = node(6);
+    BinaryTreeNode<Integer> seven = node(7);
+    BinaryTreeNode<Integer> eight = node(8);
+    BinaryTreeNode<Integer> nine = node(9);
+
+    five.left(three);five.right(seven);
+
+    three.left(two);three.right(four);
+    seven.left(six);seven.right(nine);
+
+    two.left(one);nine.left(eight);
+    // when
+    areEqual(finder.find(one, one).value(), one.value());
+    areEqual(finder.find(one, two).value(), two.value());
+    areEqual(finder.find(two, one).value(), two.value());
+    areEqual(finder.find(one, three).value(), three.value());
+    areEqual(finder.find(three, one).value(), three.value());
+    areEqual(finder.find(nine, one).value(), five.value());
+    areEqual(finder.find(one, nine).value(), five.value());
+  }
+
+  @Test
+  public void testSubTreeChecker() {
+    // given
+    BinaryTreeNode<Integer> one = node(1);
+    BinaryTreeNode<Integer> two = node(2);
+    BinaryTreeNode<Integer> three = node(3);
+    BinaryTreeNode<Integer> four = node(4);
+    BinaryTreeNode<Integer> five = node(5);
+    BinaryTreeNode<Integer> six = node(6);
+    BinaryTreeNode<Integer> seven = node(7);
+    BinaryTreeNode<Integer> eight = node(8);
+    BinaryTreeNode<Integer> nine = node(9);
+
+    five.left(three);five.right(seven);
+
+    three.left(two);three.right(four);
+    seven.left(six);seven.right(nine);
+
+    two.left(one);nine.left(eight);
+
+    BinaryTreeNode<Integer> eleven = node(11);
+    eleven.left(node(10));eleven.right(node(12));
+    BinaryTreeNode<Integer> otherThree = node(3);
+    BinaryTreeNode<Integer> otherSeven = node(7);
+    otherSeven.left(node(4));otherSeven.right(node(9));
+
+
+    SubtreeChecker checker = new SubtreeChecker();
+    // when
+    isTrue(checker.check(five, one));
+    isTrue(checker.check(five, two));
+    isTrue(checker.check(five, three));
+    isTrue(checker.check(five, four));
+    isTrue(checker.check(five, five));
+    isTrue(checker.check(five, six));
+    isTrue(checker.check(five, seven));
+    isTrue(checker.check(five, eight));
+    isTrue(checker.check(five, nine));
+    isTrue(checker.check(five, five));
+
+    isFalse(checker.check(five, eleven));
+    isFalse(checker.check(five, otherThree));
+    isFalse(checker.check(five, otherSeven));
+
+  }
+
+  @Test
+  public void testBinaryTreeSumFinder() {
+    // given
+    BinaryTreeNode<Integer> one = node(1);
+    BinaryTreeNode<Integer> two = node(2);
+    BinaryTreeNode<Integer> three = node(3);
+    BinaryTreeNode<Integer> four = node(4);
+    BinaryTreeNode<Integer> five = node(5);
+    BinaryTreeNode<Integer> six = node(6);
+    BinaryTreeNode<Integer> seven = node(7);
+    BinaryTreeNode<Integer> eight = node(8);
+    BinaryTreeNode<Integer> nine = node(9);
+
+    five.left(three);five.right(seven);
+
+    three.left(two);three.right(four);
+    seven.left(six);seven.right(nine);
+
+    two.left(one);nine.left(eight);
+
+    BinaryTreeNode<Integer> eleven = node(11);
+    eleven.left(node(10));eleven.right(node(12));
+    BinaryTreeNode<Integer> otherThree = node(3);
+    BinaryTreeNode<Integer> otherSeven = node(7);
+    otherSeven.left(node(4));otherSeven.right(node(9));
+
+    BinaryTreeSumFinder finder = new BinaryTreeSumFinder();
+
+    // when
+    List<String> actual = finder.find(five, 8);
+    // then
+    areEqual(actual.size(), 2);
+    areEqual(actual.get(0), "3->5");
+    areEqual(actual.get(1), "8");
+
+    actual = finder.find(five, 6);
+    areEqual(actual.size(), 2);
+    areEqual(actual.get(0), "1->2->3");
+    areEqual(actual.get(1), "6");
+
+    actual = finder.find(five, 19);
+    areEqual(actual.size(), 0);
+  }
 }
