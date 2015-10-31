@@ -22,12 +22,29 @@ public abstract class ChapterTestBase {
   @Rule
   public ErrorCollector errors = new ErrorCollector();
 
+
+  protected <T> void isTrue(String reason, T value) {
+    errors.checkThat(reason, value, is(true));
+  }
+
+  protected <T> void isTrue(T value) {
+    errors.checkThat(value, is(true));
+  }
+
   protected <T> void isTrueThat(String reason, T value, Matcher<T> matcher) {
     errors.checkThat(reason, value, matcher);
   }
 
   protected <T> void isTrueThat(T value, Matcher<T> matcher) {
     errors.checkThat(value, matcher);
+  }
+
+  protected <T> void isFalse(String reason, T value) {
+    errors.checkThat(reason, value, is(false));
+  }
+
+  protected <T> void isFalse(T value) {
+    errors.checkThat(value, is(false));
   }
 
   protected <T> void isFalseThat(String reason, T value, Matcher<T> matcher) {
