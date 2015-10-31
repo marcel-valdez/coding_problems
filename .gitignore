@@ -2,3 +2,4 @@ classes
 Gemfile.lock
 *.swp
 plan.md
+*~
