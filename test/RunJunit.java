@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class RunJunit {
+  private static final String RUN_ALL = "all";
   private static Class<?> classToTest = null;
   // Arg 1: directory where classes live
   // Arg 2: class name to execute (optional, if empty then means to run all, including self)
@@ -23,49 +24,83 @@ public class RunJunit {
       throw new Exception("Usage: java RunJunit <classes directory> [<class name>]");
     }
 
-    final String testName;
+    final String testClassName;
     if(args.length < 2) {
-      testName = "RunJunit";
+      testClassName = "RunJunit";
     } else {
-      testName = args[1];
+      testClassName = args[1];
     }
 
-    executeTest(testName);
+    if(!testClassName.equals(RUN_ALL)) {
+      exit(executeTest(testClassName));
+    } else {
+      executeAllTests();
+    }
   }
 
-  private static void executeTest(String testClassName) throws Exception {
+  private static void executeAllTests() {
+    boolean testsPassed = true;
+    String[] tests = getAllClassNames().stream()
+      .filter(name -> name.endsWith("Test"))
+      .toArray(String[]::new);
+    for(String test : tests) {
+      try {
+        testsPassed = testsPassed && executeTest(test).wasSuccessful();
+      } catch(Exception e) {
+        testsPassed = false;
+        System.out.println(e);
+      }
+    }
+
+    System.exit(testsPassed ? 0 : 1);
+  }
+
+  private static Result executeTest(String testClassName) throws Exception {
+    Result result = null;
     try {
       System.out.println("Testing class: " + testClassName);
-      Result result = executeTestClass(findClass(testClassName));
+      result = executeTestClass(findClass(testClassName));
       printFailures(result.getFailures());
       printSummary(result);
-      exit(result);
     } catch(ClassNotFoundException e) {
       System.out.println("Test class " + testClassName + " does not exist.");
       System.exit(1);
     } catch (TimeoutException e) {
       e.printStackTrace();
       System.exit(1);
+    } catch(TestNotFoundException e) {
+      executeAllTests();
     }
+
+    return result;
   }
 
   private static Class<?> findClass(String simpleClassName) throws Exception {
-    ClassLoader classLoader = RunJunit.class.getClassLoader();
-    Enumeration<URL> roots = classLoader.getResources("");
-    List<String> classFiles = new ArrayList<>();
-    while(roots.hasMoreElements()) {
-      URL url = roots.nextElement();
-      File file = new File(url.getPath());
-      classFiles.addAll(getAllClassFiles(file, file));
-    }
-
-    Optional<String> qClassName = classFiles.stream()
+    Optional<String> qClassName = getAllClassNames().stream()
       .filter(className -> className.endsWith(simpleClassName))
       .findFirst();
     if(qClassName.isPresent()) {
       return Class.forName(qClassName.get());
     } else {
-      throw new RuntimeException("No class for test name: " + simpleClassName);
+      System.out.println("WARNING: No unit test " + simpleClassName);
+      throw new TestNotFoundException("No class for test name: " + simpleClassName);
+    }
+  }
+
+  private static List<String> getAllClassNames() {
+    try {
+      ClassLoader classLoader = RunJunit.class.getClassLoader();
+      Enumeration<URL> roots = classLoader.getResources("");
+      List<String> classFiles = new ArrayList<>();
+      while(roots.hasMoreElements()) {
+        URL url = roots.nextElement();
+        File file = new File(url.getPath());
+        classFiles.addAll(getAllClassFiles(file, file));
+      }
+
+      return classFiles;
+    } catch(IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -142,6 +177,7 @@ public class RunJunit {
   }
 
   @Test
+  @Ignore
   public void failingTest() {
     Assert.assertEquals("This should always fail.", true, false);
     System.out.println("Executed test for RunJunit");
@@ -153,7 +189,14 @@ public class RunJunit {
   }
 
   @Test
+  @Ignore
   public void testWithException() {
    throw new RuntimeException("How does this look?");
+  }
+
+  private static class TestNotFoundException extends RuntimeException {
+    public TestNotFoundException(String msg) {
+      super(msg);
+    }
   }
 }

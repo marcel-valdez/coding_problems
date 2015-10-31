@@ -51,6 +51,3 @@ bundle exec guard
 
 ## TODO Notes
 
-- If a class Xxx in the src folder is modified, and it does
-  not have a corresponding XxxTest class, then all test
-  classes should be executed.
