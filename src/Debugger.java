@@ -7,6 +7,9 @@ public final class Debugger {
 
   private Debugger() { }
 
+  public void println(Object obj) { if(enabled) System.out.println(obj + ""); }
+  public void print(Object obj) { if(enabled) System.out.print(obj + ""); }
+
   public void println(String msg) { if(enabled) System.out.println(msg); }
   public void print(String msg) { if(enabled) System.out.print(msg); }
 
