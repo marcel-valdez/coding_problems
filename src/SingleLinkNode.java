@@ -42,6 +42,19 @@ public class SingleLinkNode<T> {
     return sb.toString();
   }
 
+  public int hashCode() {
+    int hashCode = 0;
+    if(this.value != null) {
+      hashCode += 31 * this.value.hashCode();
+    }
+
+    if(this.next() != null) {
+      hashCode += 17 * this.next().hashCode();
+    }
+
+    return hashCode;
+  }
+
   @Override
   public boolean equals(Object other) {
     if(!(other instanceof SingleLinkNode)) {
