@@ -266,3 +266,204 @@ class StringPermutations {
     return new String(arr);
   }
 }
+
+class ParenthesisPrinter {
+  // TODO: Write tests
+  public List<String> permutations(int pairs) {
+    if(pairs <= 0) { return new ArrayList<>(); }
+    Set<Parens> content = new HashSet<>();
+    content.add(Parens.empty());
+    content = doPermutations(pairs, content, 1);
+    return toStrings(content);
+  }
+
+  private List<String> toStrings(Set<Parens> parens) {
+    List<String> result = new ArrayList<>();
+    for(Parens pair : parens) {
+      result.add(pair.toString());
+    }
+
+    return result;
+  }
+
+  private Set<Parens> doPermutations(int pairs, Set<Parens> content, int pairCount) {
+    Set<Parens> nextValues = new HashSet<>();
+    for(int i = pairCount+1; i <= pairs; i++) {
+      for(Parens parens : content) {
+        nextValues.add(DEBUG.println(parens.wrap()));
+        nextValues.add(DEBUG.println(parens.before()));
+        nextValues.add(DEBUG.println(parens.after()));
+      }
+      Set<Parens> tmp = content;
+      content = nextValues;
+      tmp.clear(); // assuming this is for free, and does not go delete 1 by 1
+      nextValues = tmp;
+    }
+
+    return content;
+  }
+
+  private static class Parens {
+    private final ContentPosition position;
+    private final Parens content;
+    private String toString;
+    private int hashCode;
+
+    private Parens(Parens content, ContentPosition position) {
+      if(position == null) { throw new RuntimeException("position cannot be null."); }
+      this.content = content;
+      this.position = position;
+      this.hashCode = Integer.MIN_VALUE;
+    }
+
+    private ContentPosition position() { return this.position; }
+
+    private Parens content() { return this.content; }
+
+    public static Parens empty() {
+      return new Parens(null, ContentPosition.NONE);
+    }
+
+    public Parens wrap() {
+      return new Parens(this, ContentPosition.WRAPPED);
+    }
+
+    public Parens before() {
+      return new Parens(this, ContentPosition.BEFORE);
+    }
+
+    public Parens after() {
+      return new Parens(this, ContentPosition.AFTER);
+    }
+
+    public String toString() {
+      if(this.toString == null) {
+        StringBuilder sb = new StringBuilder();
+        appendString(sb);
+        this.toString = sb.toString();
+      }
+
+      return this.toString;
+    }
+
+    private void appendString(StringBuilder sb) {
+      if(this.toString != null) {
+        sb.append(this.toString);
+      } else {
+        switch(this.position) {
+          case NONE:
+            sb.append("()");
+            break;
+          case BEFORE:
+            sb.append("()");content.appendString(sb);
+            break;
+          case AFTER:
+            content.appendString(sb);sb.append("()");
+            break;
+          case WRAPPED:
+            sb.append("(");content.appendString(sb);sb.append(")");
+            break;
+        }
+      }
+    }
+
+    public int hashCode() {
+      if(this.hashCode == Integer.MIN_VALUE) {
+        this.hashCode = this.toString().hashCode();
+      }
+
+      return this.hashCode;
+    }
+
+    public boolean equals(Object other) {
+      if(!(other instanceof Parens)) { return false; }
+      return this.toString().equals(other.toString());
+    }
+
+    private boolean equal(Object a, Object b) {
+      if(a == null || b == null) { return b == a; }
+
+      return a.equals(b);
+    }
+  }
+
+  enum ContentPosition {
+    NONE(7), WRAPPED(13), BEFORE(23), AFTER(41);
+
+    private int hashCode;
+
+    ContentPosition(int hashCode) {
+      this.hashCode = hashCode;
+    }
+  }
+}
+
+class PaintFill {
+  public int fill(byte[][] image, byte color, Point start) {
+    if(image == null) { throw new RuntimeException("image cannot be null."); }
+    if(image.length == 0) { throw new RuntimeException("Image cannot be of width 0"); }
+    if(image[0].length == 0) { throw new RuntimeException("Image cannot be of height 0"); }
+
+    int height = image[0].length;
+    int width = image.length;
+    byte filledColor = image[start.x][start.y];
+
+    Stack<Point> moves = new Stack<>();
+    moves.push(new Point(0, 0));
+
+    int pixelsPainted = 0;
+    while(!moves.isEmpty()) {
+      Point move = moves.pop();
+      if(move.fill(image, filledColor, color)) {
+        pixelsPainted++;
+        moves.push(move.left());
+        moves.push(move.leftDown());
+        moves.push(move.leftUp());
+
+        moves.push(move.right());
+        moves.push(move.rightUp());
+        moves.push(move.rightDown());
+
+        moves.push(move.up());
+        moves.push(move.down());
+      }
+    }
+
+    return pixelsPainted;
+  }
+
+  public static class Point {
+    int x; int y;
+    public Point(int x, int y) { this.x = x; this.y = y; }
+
+    public boolean isWithinImage(byte[][] image) {
+      return (x >= 0 && y >= 0) && x < image.length && y < image[0].length;
+    }
+
+    public boolean isOfColor(byte[][] image, byte color) {
+      return isWithinImage(image) && image[x][y] == color;
+    }
+
+    public void paint(byte[][] image, byte color) {
+      image[x][y] = color;
+    }
+
+    public Point left() { return new Point(x - 1, y); }
+    public Point right() { return new Point(x + 1, y); }
+    public Point up() { return new Point(x, y + 1); }
+    public Point down() { return new Point(x, y - 1); }
+    public Point leftUp() { return left().up(); }
+    public Point leftDown() { return left().down(); }
+    public Point rightUp() { return right().up(); }
+    public Point rightDown() { return right().down(); }
+
+    public boolean fill(byte[][] image, byte filledColor, byte color) {
+      if(!isOfColor(image, color) &&  isOfColor(image, filledColor)) {
+        paint(image, color);
+        return true;
+      }
+
+      return false;
+    }
+  }
+}

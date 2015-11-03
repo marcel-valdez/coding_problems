@@ -162,8 +162,49 @@ public class Chapter9Test extends ChapterTestBase {
     List<String> actual = target.permutations(permutations[0]);
     // then
     areEqual(actual.size(), permutations.length);
-    for(String permutation : permutations) {
-      isTrue(actual.contains(permutation));
+    checkList(actual, permutations);
+  }
+
+  @Test
+  public void testParenthesisPrinter() {
+    ParenthesisPrinter printer = new ParenthesisPrinter();
+    checkList(printer.permutations(1), "()");
+    checkList(printer.permutations(2), "(())", "()()");
+    checkList(printer.permutations(3), "(())()", "((()))", "()(())", "(()())","()()()");
+  }
+
+  private <T> void checkList(List<T> container, T ... items) {
+    areEqual(container.size(), items.length);
+    for(T item : items) {
+      isTrue("Element not found: " + item, container.contains(item));
     }
+  }
+
+  @Test
+  public void testPaintFill() {
+    // given
+    byte[][] image = {
+      { 0, 1, 1, 0 },
+      { 0, 0, 2, 1 },
+      { 1, 1, 0, 1 },
+      { 0, 0, 1, 0 }
+    };
+
+    byte[][] expected = {
+      { 2, 1, 1, 0 },
+      { 2, 2, 2, 1 },
+      { 1, 1, 2, 1 },
+      { 2, 2, 1, 2 }
+    };
+
+    PaintFill fill = new PaintFill();
+
+    // when
+    int pixelsPainted = fill.fill(image, (byte) 2, new PaintFill.Point(0, 0));
+
+    // then
+    areEqual(image, expected);
+    // then one fill for each pixel painted
+    areEqual(pixelsPainted, 7);
   }
 }
