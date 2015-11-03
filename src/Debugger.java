@@ -7,11 +7,37 @@ public final class Debugger {
 
   private Debugger() { }
 
-  public void println(Object obj) { if(enabled) System.out.println(obj + ""); }
-  public void print(Object obj) { if(enabled) System.out.print(obj + ""); }
+  public <T> T println(T obj) {
+    if(enabled) {
+      System.out.println(obj + "");
+    }
 
-  public void println(String msg) { if(enabled) System.out.println(msg); }
-  public void print(String msg) { if(enabled) System.out.print(msg); }
+    return obj;
+  }
+
+  public <T> T print(T obj) {
+    if(enabled) {
+      System.out.print(obj + "");
+    }
+
+    return obj;
+  }
+
+  public String println(String msg) {
+    if(enabled) {
+      System.out.println(msg);
+    }
+
+    return msg;
+  }
+
+  public String print(String msg) {
+    if(enabled) {
+      System.out.print(msg);
+    }
+
+    return msg;
+  }
 
   public void enable() { this.enabled = true; }
   public void disable() { this.enabled = false; }
