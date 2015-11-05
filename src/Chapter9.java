@@ -467,3 +467,108 @@ class PaintFill {
     }
   }
 }
+
+class ChangePermutations {
+  // Problemas:
+  // 1. No me fui directo al pintarron primero, intente empezar con codigo
+  // 2. Me fui por la solucion mas complicada primero, implementar
+  //    iterativamente un problema recursivo
+  // 3. Lei el problema mal, la tarea simplemente era dar el numero de permutaciones
+  //    no crear las formas de cambio de monedas.
+  public LinkedListStack<SingleLinkNode<Coin>> changePermutations(int cents) {
+    LinkedListStack<Permutation> currentPermutations = new LinkedListStack<>();
+    LinkedListStack<Permutation> nextPermutations = new LinkedListStack<>();
+
+    currentPermutations.push(new Permutation(cents, null));
+
+    Map<Integer, LinkedListStack<Permutation>> memo = new HashMap<>();
+    for(Coin coin : Coin.values()) {
+      while(!currentPermutations.isEmpty()) {
+        Permutation permutation = currentPermutations.pop();
+        int denominationCount = permutation.remainder / coin.value();
+        DEBUG.println("denominationCount: " + denominationCount + ", coin: " + coin);
+        for(int i = 0; i <= denominationCount; i++) {
+          int remainder = permutation.remainder - (i * coin.value());
+          if(coin == Coin.PENNY && remainder != 0) {
+            continue;
+          }
+
+          SingleLinkNode[] coins = produceCoins(coin, i);
+          nextPermutations.push(
+            permutation(
+              coins[0], // head
+              coins[1], // tail
+              permutation,
+              remainder
+            )
+          );
+        }
+      }
+
+      LinkedListStack<Permutation> tmp = currentPermutations;
+      currentPermutations = nextPermutations;
+      nextPermutations = tmp;
+    }
+
+    return toResults(currentPermutations);
+  }
+
+  private SingleLinkNode[] produceCoins(Coin coin, int count) {
+    SingleLinkNode<Coin> tail = null;
+    SingleLinkNode<Coin> head = null;
+    for(int i = 0; i < count; i++) {
+      if(head == null) {
+        tail = head = new SingleLinkNode<>(coin);
+      } else {
+        tail.next(new SingleLinkNode<>(coin));
+        tail = tail.next();
+      }
+    }
+
+    return new SingleLinkNode[] { head, tail };
+  }
+
+  private LinkedListStack<SingleLinkNode<Coin>> toResults(
+    LinkedListStack<Permutation> permutations) {
+    LinkedListStack<SingleLinkNode<Coin>> result = new LinkedListStack<>();
+
+    while(!permutations.isEmpty()) {
+      result.push(permutations.pop().coins);
+    }
+
+    return result;
+  }
+
+  private Permutation permutation(
+    SingleLinkNode<Coin> head,
+    SingleLinkNode<Coin> tail,
+    Permutation other,
+    int remainder) {
+    if(head != null) {
+      tail.next(other.coins);
+    } else {
+      head = other.coins;
+    }
+
+    DEBUG.println("Permutation(" + remainder +  "): " + head);
+    return new Permutation(remainder, head);
+  }
+
+  private static class Permutation {
+    public final int remainder;
+    public final SingleLinkNode<Coin> coins;
+    public Permutation(int remainder, SingleLinkNode<Coin> coins) {
+      this.remainder = remainder; this.coins = coins;
+    }
+  }
+
+  enum Coin {
+    QUARTER(25), DIME(10), NICKEL(5), PENNY(1);
+
+    private final int value;
+
+    Coin(int value) { this.value = value; }
+
+    public int value() { return this.value; }
+  }
+}

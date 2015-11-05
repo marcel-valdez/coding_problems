@@ -99,8 +99,6 @@ public class Chapter9Test extends ChapterTestBase {
     checkMagicIndexFinder(new int[] { -3, -4, 2 }, 2);
     checkMagicIndexFinder(new int[] { -3, 1, 4 }, 1);
     checkMagicIndexFinder(new int[] { -3, 1, 4 }, 1);
-
-
     checkMagicIndexFinder(new int[] { 2, 2, 2 }, 2);
   }
 
@@ -206,5 +204,47 @@ public class Chapter9Test extends ChapterTestBase {
     areEqual(image, expected);
     // then one fill for each pixel painted
     areEqual(pixelsPainted, 7);
+  }
+
+  @Test
+  public void testChangePermutations() {
+    // given
+      // 10 pennies
+      // 2 nickels
+      // 1 nickel + 5 cents
+      // 1 dime
+    checkChangePermutations(4, 1);
+    checkChangePermutations(9, 2);
+    checkChangePermutations(10, 4);
+    checkChangePermutations(26, 13);
+
+  }
+
+  private void checkChangePermutations(int cents, int expectedCount) {
+
+    ChangePermutations permutations = new ChangePermutations();
+    DEBUG.enable();
+    try {
+    // when
+    LinkedListStack<SingleLinkNode<ChangePermutations.Coin>> change =
+      permutations.changePermutations(cents);
+    // then
+    areEqual(change.size(), expectedCount);
+    SingleLinkNode<ChangePermutations.Coin> permutation;
+    while(!change.isEmpty()) {
+      permutation = change.pop();
+      areEqual(sum(permutation), cents);
+    }
+    } finally {DEBUG.disable();}
+  }
+
+  private int sum(SingleLinkNode<ChangePermutations.Coin> coins) {
+    int value = 0;
+    DEBUG.println(coins);
+    while(coins != null) {
+      value += coins.value().value();
+      coins = coins.next();
+    }
+    return value;
   }
 }
