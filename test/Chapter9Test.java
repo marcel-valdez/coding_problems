@@ -223,8 +223,6 @@ public class Chapter9Test extends ChapterTestBase {
   private void checkChangePermutations(int cents, int expectedCount) {
 
     ChangePermutations permutations = new ChangePermutations();
-    DEBUG.enable();
-    try {
     // when
     LinkedListStack<SingleLinkNode<ChangePermutations.Coin>> change =
       permutations.changePermutations(cents);
@@ -235,7 +233,6 @@ public class Chapter9Test extends ChapterTestBase {
       permutation = change.pop();
       areEqual(sum(permutation), cents);
     }
-    } finally {DEBUG.disable();}
   }
 
   private int sum(SingleLinkNode<ChangePermutations.Coin> coins) {
@@ -246,5 +243,55 @@ public class Chapter9Test extends ChapterTestBase {
       coins = coins.next();
     }
     return value;
+  }
+
+  @Test @Ignore
+  public void testQueensPosition() {
+    QueensBoardSolver.QueensPosition position = new QueensBoardSolver.QueensPosition();
+
+    areEqual(position.place(0,0).positions(), 1L);
+    areEqual(position.place(7,7).positions(), (1L << 63));
+
+    isTrue("Same position", position.place(0,0).isOccupied(0,0));
+    isTrue("Vertical", position.place(0,0).isOccupied(0,1));
+    isTrue("Horizontal", position.place(0,0).isOccupied(1,0));
+    isTrue("Diagonal", position.place(0,0).isOccupied(1,1));
+
+    QueensBoardSolver.QueensPosition test = new QueensBoardSolver.QueensPosition(
+      position.place(4,0).touchedSquares(),
+      0
+    );
+    DEBUG.enable();
+    printBitboard(test.asBitboard());
+    DEBUG.disable();
+  }
+
+  @Test @Ignore
+  public void testQueensBoardSolver() {
+    // given
+    QueensBoardSolver solver = new QueensBoardSolver();
+    // when
+    if(true) { return; }
+    DEBUG.enable();
+    List<boolean[][]> result = solver.solve();
+    // then
+    for(boolean[][] position : result) {
+      printBitboard(position);
+      DEBUG.println("-------------");
+      break;
+    }
+    areEqual(result.size(), 92);
+    DEBUG.disable();
+  }
+
+  private static void printBitboard(boolean[][] position) {
+    DEBUG.println("  0 1 2 3 4 5 6 7");
+    for(int y = 0; y < position.length; y++) {
+      DEBUG.print(y + " ");
+      for(int x = 0; x < position.length; x++) {
+        DEBUG.print(position[x][y] ? "X " : "- ");
+      }
+      DEBUG.println("");
+    }
   }
 }

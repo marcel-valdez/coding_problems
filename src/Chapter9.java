@@ -572,3 +572,158 @@ class ChangePermutations {
     public int value() { return this.value; }
   }
 }
+
+/**
+ * Lesson learned: Do not to solve the problems using
+ * technically optimized solutions (i.e. bit shifting,
+ * iterative solutions to recursive problems, etc)
+ * That complicates the problem's solution by a truck-load
+ * always go for the solution that is 'algorithmically'
+ * optimal, even if it does not perform the best
+ * possible due to computer constraints.a
+ */
+class QueensBoardSolver {
+
+  public List<boolean[][]> solve() {
+
+    LinkedListStack<QueensPosition> positions = new LinkedListStack<>();
+    LinkedListStack<QueensPosition> nextPositions = new LinkedListStack<>();
+
+    Set<Long> positionsConsidered = new HashSet<>();
+    positions.push(new QueensPosition());
+    positionsConsidered.add(positions.peek().positions);
+    // 8^3
+    for(int queen = 0; queen < 8; queen++) {
+      int combos = 0;
+      int memoAccess = 0;
+      while(!positions.isEmpty()) {
+        QueensPosition position = positions.pop();
+        for(int x = 0; x < 8; x++) {
+          for(int y = 0; y < 8; y++) {
+            if(!position.isOccupied(x, y)) {
+              QueensPosition newPosition = position.place(x, y);
+              if(!positionsConsidered.contains(newPosition.positions)) {
+                positionsConsidered.add(newPosition.positions);
+                combos++;
+                nextPositions.push(newPosition);
+              } else {
+                memoAccess++;
+              }
+            }
+          }
+        }
+      }
+
+      DEBUG.println("Q: " + queen + " Combos: " + combos +  " Memos: " + memoAccess);
+      LinkedListStack<QueensPosition> tmp = positions;
+      positions = nextPositions;
+      nextPositions = tmp;
+    }
+
+    List<boolean[][]> results = new ArrayList<>();
+    while(!positions.isEmpty()) {
+      results.add(positions.pop().asBitboard());
+    }
+
+    return results;
+  }
+
+  public static class QueensPosition {
+    private static final long ROW = 0b11111111l;
+    private static final long COLUMN =
+      0b0000000100000001000000010000000100000001000000010000000100000001l;
+    private static final long LEFT_DIAGONAL = // '\'
+      0b1000000001000000001000000001000000001000000001000000001000000001l;
+    private static final long RIGHT_DIAGONAL = // '/'
+      0b0000000100000010000001000000100000010000001000000100000010000000l;
+
+    private long positions;
+    private long touchedSquares;
+    public QueensPosition() {
+      this(0, 0);
+    }
+
+    public QueensPosition(long positions, long touchedSquares) {
+      this.positions = positions;
+      this.touchedSquares = touchedSquares;
+    }
+
+    // assumes x from 0 to 7, y from 0 to 7
+    public QueensPosition place(int x, int y) {
+      long newTouchedSquares = touchedSquares | touchedSquaresByPosition(x, y);
+      long newPositions = positions | position(x, y);
+      return new QueensPosition(newPositions, newTouchedSquares);
+    }
+
+    private long touchedSquaresByPosition(int x, int y) {
+      // produce the touched rows
+      long leftDiagonal = LEFT_DIAGONAL; // '\'
+      long rightDiagonal = RIGHT_DIAGONAL; // '/'
+      int moveVerticallyBy = y - x;
+      int moveLeftDiagonalHorizontallyBy = x - y - 1;
+      int moveRightDiagonalHorizontallyBy = x - y;
+// TODO: Figure out how to mark the diagonals as 'touched' by a Queen
+// in a given position
+      if(moveLeftDiagonalHorizontallyBy < 0) {
+        // move to the right
+        leftDiagonal <<= Math.abs(moveLeftDiagonalHorizontallyBy);
+      } else if(moveLeftDiagonalHorizontallyBy > 0) {
+        // move to the left
+        leftDiagonal >>= Math.abs(moveLeftDiagonalHorizontallyBy);
+      }
+
+      if(moveRightDiagonalHorizontallyBy < 0) {
+        // move to the right
+        rightDiagonal <<= Math.abs(moveRightDiagonalHorizontallyBy);
+      } else if(moveRightDiagonalHorizontallyBy > 0) {
+        // move to the left
+        rightDiagonal >>= Math.abs(moveRightDiagonalHorizontallyBy);
+      }
+
+      long occupiedRow = ROW << (y*8);
+      long occupiedColumn = COLUMN << x;
+      long result = occupiedRow | occupiedColumn | leftDiagonal | rightDiagonal;
+
+      return result;
+    }
+
+    public boolean isOccupied(int x, int y) {
+      return (touchedSquares & position(x, y)) != 0;
+    }
+
+    public long positions() {
+      return this.positions;
+    }
+
+    public long touchedSquares() {
+      return this.touchedSquares;
+    }
+
+    public int hashCode() {
+      return (int) this.positions;
+    }
+
+    public boolean equals(Object other) {
+      if(!(other instanceof QueensPosition)) {
+        return false;
+      }
+
+      return positions == ((QueensPosition) other).positions;
+    }
+
+    public boolean[][] asBitboard() {
+      boolean[][] bitboard = new boolean[8][8];
+      for(int y = 0; y < 8; y++) {
+        for(int x = 0; x < 8; x++) {
+          bitboard[x][y] = (positions & position(x, y)) != 0;
+        }
+      }
+
+      return bitboard;
+    }
+
+    private static long position(int x, int y) {
+      return (1l << (y * 8)) << x;
+    }
+  }
+}
