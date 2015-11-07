@@ -4,6 +4,7 @@ import static debug.Debugger.DEBUG;
 
 import java.lang.*;
 import java.util.*;
+import java.util.stream.*;
 
 import structures.*;
 
@@ -725,5 +726,421 @@ class QueensBoardSolver {
     private static long position(int x, int y) {
       return (1l << (y * 8)) << x;
     }
+  }
+}
+
+class BoxStacker {
+  private static final int HEAD = 0;
+  private static final int TAIL = 1;
+  private static final RecursionResult NONE = new RecursionResult(-1, null);
+
+  public SingleLinkNode<Box> stack(List<Box> boxes) {
+    if(boxes == null) { throw new RuntimeException("boxes cant be null"); }
+    if(boxes.size() == 0) { return null; }
+
+    Map<Box, RecursionResult> memo = new HashMap<>();
+    RecursionResult tallest = null;
+    for(Box box : boxes) {
+      SingleLinkNode<Box> head = new SingleLinkNode<>(box);
+      if(tallest == null) {
+        tallest = result(head, box.h());
+      }
+
+      RecursionResult boxResult = maxStack(memo, head, boxesThatFit(box, boxes), box.h(), tallest);
+      if(boxResult.h() > tallest.h()) {
+        tallest = boxResult;
+      }
+    }
+
+    return tallest.stack();
+  }
+
+  // returns the talles stack when bottom is the box at the bottom of the stack
+  private RecursionResult maxStack(
+    Map<Box, RecursionResult> memo,
+    SingleLinkNode<Box> bottom,
+    List<Box> remainingBoxes, // remaining boxes
+    int currentHeight,
+    RecursionResult tallest
+  ) {
+
+    if(memo.containsKey(bottom.value())) {
+      RecursionResult memoValue = getMemo(memo, bottom, currentHeight);
+      if(memoValue == NONE) {
+        return NONE;
+      } else {
+        return memoValue;
+      }
+    }
+
+    // can we cache the results based on the bottom box?
+    // that is a good question.
+    if(remainingBoxes.size() == 0) {
+      return result(bottom, currentHeight);
+    }
+
+    RecursionResult localTallest = null;
+    for(Box potentialNext : remainingBoxes) {
+      // optimization: do not even try to recurse further
+      // if stack can't be taller than tallest even if
+      // all boxes taht fit in it were stacked.
+      List<Box> potentialStack = boxesThatFit(potentialNext, remainingBoxes);
+      int potentialHeight = sumOfHeights(potentialStack);
+      int potentialTotalHeight = currentHeight + potentialNext.h() + potentialHeight;
+      if(potentialTotalHeight > tallest.h()) {
+        SingleLinkNode<Box> newBottom = new SingleLinkNode<>(potentialNext);
+        newBottom.next(bottom);
+        RecursionResult stackResult = maxStack(
+          memo,
+          newBottom,
+          potentialStack,
+          currentHeight + potentialNext.h(),
+          tallest
+        );
+
+        if(localTallest == null || stackResult.h() > localTallest.h()) {
+          localTallest = stackResult;
+        }
+
+        if(stackResult.h() > tallest.h()) {
+          DEBUG.println("New tallest: " + stackResult);
+          tallest = stackResult;
+        }
+      }
+    }
+
+    memoize(memo, bottom, currentHeight, localTallest);
+    // if no stack better than the one passed in, then stop execution.
+    return tallest;
+  }
+
+  private RecursionResult getMemo(
+    Map<Box, RecursionResult> memo,
+    SingleLinkNode<Box> bottom,
+    int bottomHeight) {
+
+    RecursionResult memoized =  memo.get(bottom.value());
+    SingleLinkNode<Box>[] headTail = copyTopStack(null, memoized.stack());
+    headTail[TAIL].next(bottom);
+    DEBUG.println("Found memo for: " + bottom.value() + ", requested by: " + bottom.next());
+    return result(headTail[HEAD], memoized.h() + bottomHeight);
+  }
+
+  private void memoize(
+    Map<Box, RecursionResult> memo,
+    SingleLinkNode<Box> bottom,
+    int bottomHeight,
+    RecursionResult result) {
+
+    RecursionResult memoEntry = NONE;
+    if(result != null) {
+      SingleLinkNode<Box>[] headTail = copyTopStack(bottom, result.stack());
+      memoEntry = result(headTail[HEAD], result.h() - bottomHeight);
+    }
+
+    memo.put(
+      bottom.value(),
+      memoEntry
+    );
+  }
+
+  private SingleLinkNode<Box>[] copyTopStack(
+    SingleLinkNode<Box> bottom, SingleLinkNode<Box> stack) {
+
+    if(stack == bottom) {
+      return null; // no boxes on top of the bottom
+    }
+
+    SingleLinkNode<Box> tail = copyNode(stack);
+    SingleLinkNode<Box> head = tail;
+    if(stack != null) {
+      SingleLinkNode<Box> next = stack.next();
+      while(next != null && next != bottom) {
+        tail.next(copyNode(next));
+        tail = tail.next();
+        next = next.next();
+      }
+    }
+
+    return new SingleLinkNode[] { head, tail };
+  }
+
+  private SingleLinkNode<Box> copyNode(SingleLinkNode<Box> node) {
+    if(node == null) { return null; }
+    return new SingleLinkNode<Box>(node.value());
+  }
+
+  private List<Box> boxesThatFit(Box bottom, List<Box> boxes) {
+    return boxes.stream().filter(b -> b.fitsIn(bottom)).collect(Collectors.toList());
+  }
+
+  public int sumOfHeights(List<Box> boxes) {
+    return boxes.stream().mapToInt(b -> b.h()).sum();
+  }
+
+  private static RecursionResult result(SingleLinkNode<Box> stack, int height) {
+    return new RecursionResult(height, stack);
+  }
+
+  private static class RecursionResult {
+    private final SingleLinkNode<Box> stack;
+    private final int height;
+    public RecursionResult(int height, SingleLinkNode<Box> stack) {
+      this.stack = stack;
+      this.height = height;
+    }
+
+    public SingleLinkNode<Box> stack() { return stack; }
+    public int h() { return height; }
+
+
+    public String toString() {
+      return "{stack: " + stack + ", h: " + height + "}";
+    }
+  }
+}
+
+
+class Box {
+  private int height, width, depth;
+  private Box(int height, int width, int depth) {
+    this.height = height;
+    this.width = width;
+    this.depth = depth;
+  }
+
+  public static Box box(int height, int width, int depth) {
+    return new Box(height, width, depth);
+  }
+
+  public int h() { return height; }
+  public int w() { return width; }
+  public int d() { return depth; }
+
+  public boolean fitsIn(Box box) {
+    return h() < box.h() && w() < box.w() && d() < box.d();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if(!(other instanceof Box)) { return false; }
+    Box otherBox = (Box) other;
+    return h() == otherBox.h() && w() == otherBox.w() && d() == otherBox.d();
+  }
+
+  @Override
+  public int hashCode() {
+    return 71 + h() * 31 + w() * 13 + d() * 23;
+  }
+  @Override
+  public String toString() {
+    return "[h:" + h() + " w:" + w() + " d:" + d() + "]";
+  }
+}
+
+class ExpressionPermutator {
+  public List<Expression> calculatePermutations(String expression, boolean desired) {
+    List[][] memos = new List[expression.length()][expression.length() + 1];
+    List<Expression> permutations =
+      calculateAllPermutations(memos, expression, 0, expression.length());
+    filterUndesiredPermutations(permutations, desired);
+
+    return permutations;
+  }
+
+  private List<Expression> calculateAllPermutations(
+    List[][] memos,
+    String expression,
+    int startIndex,
+    int length) {
+    List<Expression> permutations = new ArrayList<>();
+
+    if(length == 0) {
+      return permutations;
+    }
+
+    if(getMemo(memos, startIndex, length) != null) {
+      return getMemo(memos, startIndex, length);
+    }
+
+    //DEBUG.println("permutations(" + startIndex + ", " + length + "): " + expression.substring(startIndex, startIndex + length));
+
+    if(length == 1) {
+      permutations.add(expr(expression.charAt(startIndex)));
+      memo(memos, permutations, startIndex, length);
+      return permutations;
+    }
+
+    if(length == 3) {
+      permutations.add(expr(expression, startIndex));
+      memo(memos, permutations, startIndex, length);
+      return permutations;
+    }
+
+    if(startIndex == 0) {
+      if(expression.length() < 3) {
+        throw new RuntimeException("At least 3 chars are required, found: <" + expression + ">.");
+      }
+    }
+
+    for(int i = 1; i < length; i+=2) {
+      List<Expression> lefts =
+        calculateAllPermutations(memos, expression, startIndex, i);
+
+      Operator operator = oper(expression.charAt(startIndex + i));
+
+      List<Expression> rights =
+      calculateAllPermutations(memos, expression, startIndex + i + 1, length - i - 1);
+      for(Expression left : lefts) {
+        for(Expression right : rights) {
+          permutations.add(new Expression(left, right, operator));
+        }
+      }
+    }
+
+    memo(memos, permutations, startIndex, length);
+    return permutations;
+  }
+
+  private List<Expression> getMemo(List[][] memos, int startIndex, int length) {
+    return memos[startIndex][length];
+  }
+
+  private void memo(List[][] memos, List<Expression> result, int startIndex, int length) {
+    //DEBUG.println("memo(" + startIndex + "," + length + "): " + result);
+    memos[startIndex][length] = result;
+  }
+
+  private Expression expr(String expr, int index) {
+    return new Expression(
+      new Expression(oper(expr.charAt(index))),
+      new Expression(oper(expr.charAt(index + 2))),
+      oper(expr.charAt(index + 1))
+    );
+  }
+
+  private Expression expr(char op) {
+    return new Expression(oper(op));
+  }
+
+  private Operator oper(char op) {
+    return Operator.value(op);
+  }
+
+  private void filterUndesiredPermutations(List<Expression> permutations, boolean desired) {
+    for(int i = 0; i < permutations.size(); i++) {
+      if(permutations.get(i).eval() != desired) {
+        permutations.remove(i);
+        i--;
+      }
+    }
+  }
+}
+
+class Expression {
+  private final Expression left;
+  private final Expression right;
+  private final Operator operator;
+  private Boolean memo;
+  private String asString;
+
+  public Expression(Expression left, Expression right, Operator operator) {
+    if(left == null || right == null || operator == null) {
+      throw new RuntimeException("All parameters must be set to non-null");
+    }
+
+    if(operator == Operator.TRUE || operator == Operator.FALSE) {
+      throw new RuntimeException("Composed operator cannot be a constant. (" + operator + ")");
+    }
+
+    this.left = left;
+    this.right = right;
+    this.operator = operator;
+  }
+
+  public Expression(Operator operator) {
+    if(operator != Operator.FALSE && operator != Operator.TRUE) {
+      throw new RuntimeException(
+        "Only true and false can have no left and right ops, but found: " + operator);
+    }
+
+    this.left = null;
+    this.right = null;
+    this.operator = operator;
+  }
+
+  public boolean eval() {
+    if(this.memo == null) {
+      this.memo = doEval();
+    }
+
+    return this.memo;
+  }
+
+  private boolean doEval() {
+    switch(operator) {
+      case OR:
+        return left.eval() || right.eval();
+      case AND:
+        return left.eval() && right.eval();
+      case XOR:
+        return left.eval() ^ right.eval();
+      case FALSE:
+        return false;
+      case TRUE:
+        return true;
+    }
+
+    throw new RuntimeException("Invalid operator: " + operator);
+  }
+
+  @Override
+  public String toString() {
+    if(asString == null) {
+      StringBuilder sb = new StringBuilder();
+      appendString(sb);
+      asString = sb.toString();
+    }
+
+    return asString;
+  }
+
+  private void appendString(StringBuilder sb) {
+    if(operator == Operator.FALSE || operator == Operator.TRUE) {
+      sb.append(operator.op());
+    } else {
+      sb.append('(');
+      left.appendString(sb);
+      sb.append(operator.op());
+      right.appendString(sb);
+      sb.append(')');
+    }
+  }
+}
+
+enum Operator {
+  OR('|'), AND('&'), XOR('^'), FALSE('0'), TRUE('1');
+
+  private final char op;
+
+  Operator(char op) {
+    this.op = op;
+  }
+
+  public static Operator value(char op) {
+    switch(op) {
+      case '|': return OR;
+      case '&': return AND;
+      case '^': return XOR;
+      case '0': return FALSE;
+      case '1': return TRUE;
+    }
+
+    throw new RuntimeException("Operator: <" + op + "> unkown.");
+  }
+
+  public char op() { return this.op; }
+  public boolean matches(char op) {
+    return this.op == op;
   }
 }

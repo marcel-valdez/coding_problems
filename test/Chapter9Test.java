@@ -23,6 +23,11 @@ public class Chapter9Test extends ChapterTestBase {
   private StepsPermutationCounter stepsCounter = new StepsPermutationCounter();
   private PathPermutationCounter pathsCounter = new PathPermutationCounter();
 
+  @After
+  public void disableDebug() {
+    DEBUG.disable();
+  }
+
   @Test
   public void testStepsPermutationCounter() {
     checkStepsPermutationCounter(0, 0);
@@ -293,5 +298,72 @@ public class Chapter9Test extends ChapterTestBase {
       }
       DEBUG.println("");
     }
+  }
+
+  @Test
+  public void testBoxStacker() {
+    // given
+    Box smallest =  box(1, 1, 1);
+    Box secondSmallest =  box(2, 2, 2);
+    Box middle = box(3, 3, 3);
+    Box largest =  box(4, 4, 4);
+
+
+    List<Box> boxes = boxes(
+      smallest,
+      secondSmallest,
+      box(2, 5, 2),
+      box(1, 2, 6),
+      largest,
+      middle,
+      box(3, 2, 3)
+    );
+
+    SingleLinkNode<Box> largestNode = new SingleLinkNode<>(largest);
+    SingleLinkNode<Box> middleNode = new SingleLinkNode<>(middle);
+    middleNode.next(largestNode);
+    SingleLinkNode<Box> secondSmallestNode = new SingleLinkNode<>(secondSmallest);
+    secondSmallestNode.next(middleNode);
+    SingleLinkNode<Box> smallestNode = new SingleLinkNode<>(smallest);
+    smallestNode.next(secondSmallestNode);
+
+    BoxStacker stacker = new BoxStacker();
+
+    // when
+    SingleLinkNode<Box> stack = stacker.stack(boxes);
+    // then
+    DEBUG.println(stack);
+    areEqual(stack, smallestNode);
+  }
+
+  private List<Box> boxes(Box ... boxes) {
+    List<Box> result = new ArrayList<>();
+    for(Box box : boxes) {
+      result.add(box);
+    }
+
+    return result;
+  }
+
+  private static Box box(int h, int w, int d) {
+    return Box.box(h, w, d);
+  }
+
+  @Test
+  public void testExpressionPermutator() {
+    // given
+    String expression = "1^0|0|1";
+    ExpressionPermutator permutator = new ExpressionPermutator();
+    boolean desired = false;
+    // when
+    List<Expression> permutations = permutator.calculatePermutations(expression, desired);
+    // then
+    DEBUG.enable();
+    DEBUG.println(permutations);
+    areEqual(permutations.size(), 2);
+    for(Expression permutation : permutations) {
+      areEqual(permutation.eval(), desired);
+    }
+    DEBUG.disable();
   }
 }
