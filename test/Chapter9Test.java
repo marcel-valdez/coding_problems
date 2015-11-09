@@ -358,12 +358,10 @@ public class Chapter9Test extends ChapterTestBase {
     // when
     List<Expression> permutations = permutator.calculatePermutations(expression, desired);
     // then
-    DEBUG.enable();
     DEBUG.println(permutations);
     areEqual(permutations.size(), 2);
     for(Expression permutation : permutations) {
       areEqual(permutation.eval(), desired);
     }
-    DEBUG.disable();
   }
 }
