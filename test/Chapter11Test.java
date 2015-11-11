@@ -92,14 +92,14 @@ public class Chapter11Test extends ChapterTestBase {
     for(int i = 0; i < inputs.length; i++) {
     // then
       if(!inputs[i].equals("")) {
-        areEqual("inputs(" + inputs[i] + ")", target.indexOf(inputs, inputs[i]), i);
+        areEqual(format("inputs(%s)", inputs[i]), target.indexOf(inputs, inputs[i]), i);
         areEqual(target.indexOf(other, inputs[i]), -1);
       }
     }
 
     for(int j = 0; j < other.length; j++) {
       if(!other[j].equals("")) {
-        areEqual("other(" + other[j] + ")", target.indexOf(other, other[j]), j);
+        areEqual(format("other(%s)", other[j]), target.indexOf(other, other[j]), j);
         areEqual(target.indexOf(inputs, other[j]), -1);
       }
     }
@@ -126,19 +126,7 @@ public class Chapter11Test extends ChapterTestBase {
       {28, 31, 32, 33, 34}
     };
     // when
-    for(int row = 0; row < matrix.length; row++) {
-      for(int col = 0; col < matrix[0].length; col++) {
-      DEBUG.println("------------------------------");
-      DEBUG.println("Searching: " + matrix[row][col]);
-    // then
-        MatrixIndex index = finder.indexOf(matrix, matrix[row][col]);
-        areEqual(
-          "Row for matrix["+ row + "][" + col + "](" + matrix[row][col] + ")",
-          index,
-          MatrixIndex.index(row, col)
-        );
-      }
-    }
+    testMatrixSearch(matrix, finder);
   }
 
   @Test
@@ -148,7 +136,6 @@ public class Chapter11Test extends ChapterTestBase {
 
   @Test
   public void testCorrectMatrixSearch_OddRows() {
-    DEBUG.enable();
     testMatrixSearch_OddRows(new CorrectMatrixFinder());
   }
 
@@ -162,14 +149,18 @@ public class Chapter11Test extends ChapterTestBase {
       {28, 31, 32, 33, 34}
     };
     // when
+    testMatrixSearch(matrix, finder);
+  }
+
+  public void testMatrixSearch(int[][] matrix, MatrixFinder finder) {
     for(int row = 0; row < matrix.length; row++) {
       for(int col = 0; col < matrix[0].length; col++) {
       DEBUG.println("------------------------------");
-      DEBUG.println("Searching: " + matrix[row][col]);
+      DEBUG.println("Searching: %s", matrix[row][col]);
     // then
         MatrixIndex index = finder.indexOf(matrix, matrix[row][col]);
         areEqual(
-          "Row for matrix["+ row + "][" + col + "](" + matrix[row][col] + ")",
+          format("Row for matrix[%s][%s](%s)", row, col, matrix[row][col]),
           index,
           MatrixIndex.index(row, col)
         );

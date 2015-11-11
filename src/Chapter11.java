@@ -420,6 +420,7 @@ class CorrectMatrixFinder implements MatrixFinder {
 
     int diagonalRow = startRow;
     int diagonalCol = startCol;
+    // TODO: use binary search to search on the diagonal
     for(; diagonalRow < boundaryRow && diagonalCol < boundaryCol; diagonalRow++, diagonalCol++) {
       if(get(matrix, diagonalRow, diagonalCol) >= key) {
         break;
