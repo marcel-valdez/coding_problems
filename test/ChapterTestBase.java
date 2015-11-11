@@ -22,6 +22,10 @@ public abstract class ChapterTestBase {
   @Rule
   public ErrorCollector errors = new ErrorCollector();
 
+  @After
+  public void disableDebugger() {
+    debug.Debugger.DEBUG.disable();
+  }
 
   protected <T> void isTrue(String reason, T value) {
     errors.checkThat(reason, value, is(true));
@@ -59,8 +63,16 @@ public abstract class ChapterTestBase {
     errors.checkThat(actual, equalTo(expected));
   }
 
+  protected void areEqual(String message, Object actual, Object expected) {
+    errors.checkThat(message, actual, equalTo(expected));
+  }
+
   protected void areNotEqual(Object actual, Object expected) {
     errors.checkThat(actual, not(equalTo(expected)));
+  }
+
+  protected void areNotEqual(String message, Object actual, Object expected) {
+    errors.checkThat(message, actual, not(equalTo(expected)));
   }
 
   protected static int[] popAll(LinkedListStack<Integer> stack) {
