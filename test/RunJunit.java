@@ -15,10 +15,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class RunJunit {
+  private static final int ASSERTION_ERROR_TRACE_TRUNCATE = 20;
+  private static final int USER_EXCEPTION_TRACE_TRUNCATE = 10;
+
+  private static final int TIMEOUT_SEC = 10;
   private static final String RUN_ALL = "all";
   private static Class<?> classToTest = null;
   // Arg 1: directory where classes live
-  // Arg 2: class name to execute (optional, if empty then means to run all, including self)
+  // Arg 2: "ClassName" = class to execute
+  //        "all" = run all tests
+  //        <none> = run self
   public static void main(String[] args) throws Exception {
     if(args.length <= 0) {
       throw new Exception("Usage: java RunJunit <classes directory> [<class name>]");
@@ -127,14 +133,13 @@ public class RunJunit {
   }
 
   private static Result executeTestClass(Class<?> testClass) throws Exception {
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    final ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
       final JUnitCore jUnitCore = new JUnitCore();
-
       final Future<Result> future =
         executor.submit(() -> jUnitCore.run(testClass));
-      Result result = future.get(10, TimeUnit.SECONDS);
-      return result;
+
+      return future.get(TIMEOUT_SEC, TimeUnit.SECONDS);
     } finally {
       executor.shutdownNow();
     }
@@ -152,9 +157,10 @@ public class RunJunit {
     for(Failure failure : failures) {
       System.out.println(failure.getDescription());
       if(!(failure.getException() instanceof AssertionError)) {
-        System.out.println(toShortTrace(failure.getTrace(), 20));
+
+        System.out.println(toShortTrace(failure.getTrace(), ASSERTION_ERROR_TRACE_TRUNCATE));
       } else {
-        System.out.println(toShortTrace(failure.getTrace(), 10));
+        System.out.println(toShortTrace(failure.getTrace(), USER_EXCEPTION_TRACE_TRUNCATE));
       }
     }
   }
@@ -172,7 +178,7 @@ public class RunJunit {
      summary += "Tests run: " + result.getRunCount() + " ";
      summary += "ignored: " + result.getIgnoreCount() + " ";
      summary += "failed: " + result.getFailureCount() + " ";
-     summary += "time: " + (result.getRunTime() / 1000) + "s";
+     summary += "time: " + (result.getRunTime() / 100) + "ms";
      System.out.println(summary);
   }
 
