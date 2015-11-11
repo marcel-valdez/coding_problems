@@ -152,7 +152,7 @@ class WhitespacesStringArraySearch {
     int hi = array.length - 1;
     int length = hi - lo + 1;
     while(length >= 1) {
-      DEBUG.println("hi: " + hi + ", lo: " + lo + ", length: " + length);
+      DEBUG.println("hi: %s, lo: %s, length: %s", hi, lo, length);
       if(length == 1) {
         if(!array[hi].equals(key)) {
           return -1;
@@ -162,7 +162,7 @@ class WhitespacesStringArraySearch {
       }
 
       int middle = findMiddle(array, lo, lo + (length / 2));
-      DEBUG.println("middle: " + middle);
+      DEBUG.println("middle: %s", middle);
       if(middle == -1) {
         if(length <= 2) {
           return -1;
@@ -172,7 +172,7 @@ class WhitespacesStringArraySearch {
       } else {
         String middleKey = array[middle];
         int comparison = key.compareTo(middleKey);
-        DEBUG.println("middleKey: " + middleKey + " comparison: " + comparison);
+        DEBUG.println("middleKey: %s comparison: %s ", middleKey, comparison);
         if(comparison == 0) {
           return middle;
         } else if(comparison < 0) {
@@ -251,7 +251,7 @@ class BadMatrixFinder implements MatrixFinder {
   private static int findLastEndIndexRow(
     int[][] matrix, int key, int half, int prev, int prevValid) {
 
-    DEBUG.println("findLastEndIndexRow(half:" + half + ", prev:" + prev + ", prevValid:" + prevValid + ")");
+    DEBUG.println("findLastEndIndexRow(half: %s, prev: %s prevValid: %s)", half, prev, prevValid);
     int found = -1;
     if(half >= 0 && half < matrix.length && half != prev) {
       int delta = -1;
@@ -279,13 +279,13 @@ class BadMatrixFinder implements MatrixFinder {
       }
     }
 
-    DEBUG.println("findLastEndIndexRow(half:" + half + ", prev:" + prev + ", prevValid:" + prevValid + ")=" + found);
+    DEBUG.println("findLastEndIndexRow(half: %s, prev: %s prevValid: %s)=%s", half, prev, prevValid, found);
     return found;
   }
 
   private static int findLastStartIndexRow(
     int[][] matrix, int key, int min, int half, int prev, int prevValid) {
-    DEBUG.println("findLastStartIndexRow(half:" + half + ", prev:" + prev + ", prevValid:" + prevValid + ")");
+    DEBUG.println("findLastStartIndexRow(half:%s, prev:%s, prevValid:%s)", half, prev, prevValid);
     int found = -1;
     if(half >= min && half < matrix.length && half != prev) {
       int delta = -1;
@@ -313,8 +313,7 @@ class BadMatrixFinder implements MatrixFinder {
       }
     }
 
-    DEBUG.println(
-      "findLastStartIndexRow(half:" + half + ", prev:" + prev + ", prevValid:" + prevValid + ")=" + found);
+    DEBUG.println("findLastStartIndexRow(half:%s, prev:%s, prevValid:%s)=%s", half, prev, prevValid, found);
     return found;
   }
 
@@ -334,11 +333,36 @@ class CorrectMatrixFinder implements MatrixFinder {
 // Start: 0,0 (r,c)
 
 // 1. Look for first element int he diagonal that is greater than key (2,2)
-// 2. Figure out row in which the element can be by eliminating based on
-//    the first and last elements of the 'valid' items in the column in which
-//    the diagonal element is. (r:2) NO, go to (r:1) NO, (r:0) OK
-// 3. Traverse the remaining elements of that row looking for the value
-
+// [ X, O, O, O, O ]
+// [ O, X, O, O, O ]
+// [ O, O, #, O, O ]
+// [ O, O, O, O, O ]
+// [ O, O, O, O, O ]
+// 2. Limit search space to the 2 rectangles formed by the A's and the B's
+// [ X, X, A, A, A ]
+// [ X, X, A, A, A ]
+// [ B, B, #, X, X ]
+// [ B, B, X, X, X ]
+// [ B, B, X, X, X ]
+// 3. Call 2 recursive functions:
+//    A) Set the boundaries to rectangle A
+//    B) Set the boundaries to rectangle B
+//
+// Edge Case:
+// 2.B We did not find a number in the diagonal greater than the key, but
+//     there are more rows below the diagonal.
+// [ X, O, O ]
+// [ O, X, O ]
+// [ O, O, X ]
+// [ O, O, O ] #
+// [ O, O, O ]
+// 3.B Then automatically exclude the recangle above from the search
+//     space, and only search on the left rectangle.
+// [ X, X, X ]
+// [ X, X, X ]
+// [ X, X, X ]
+// [ B, B, B ] #
+// [ B, B, B ]
   public MatrixIndex indexOf(int[][] matrix, int key) {
     if(get(matrix, 0, 0) > key) {
       return MatrixIndex.NOT_FOUND;
@@ -355,8 +379,7 @@ class CorrectMatrixFinder implements MatrixFinder {
   // it is guaranteed that the key is 'within' the range of numbers of the matrix
   private MatrixIndex indexOf(
       int[][] matrix, int key, int startRow, int startCol, int boundaryRow, int boundaryCol) {
-    DEBUG.println(
-      "indexOf(key:%s, start:(%s,%s), boundaries: (%s,%s))",
+    DEBUG.println("indexOf(key:%s, start:(%s,%s), boundaries: (%s,%s))",
       key, startRow, startCol, boundaryRow, boundaryCol);
     // look for first element in the diagonal that is greater than key
     if(boundaryRow - startRow <= 0 || boundaryCol - startCol <= 0) {
@@ -380,6 +403,10 @@ class CorrectMatrixFinder implements MatrixFinder {
       for(int i = 0; i < boundaryRow; i++) {
         if(matrix[i][startCol] == key) {
           row = i;
+          break;
+        }
+
+        if(matrix[i][startCol] > key) {
           break;
         }
       }
