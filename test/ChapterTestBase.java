@@ -89,4 +89,8 @@ public abstract class ChapterTestBase {
       stack.push(number);
     }
   }
+
+  public static String format(String format, Object ... args) {
+    return String.format(format, args);
+  }
 }
