@@ -133,7 +133,7 @@ public class RunJunit {
 
       final Future<Result> future =
         executor.submit(() -> jUnitCore.run(testClass));
-      Result result = future.get(30, TimeUnit.SECONDS);
+      Result result = future.get(10, TimeUnit.SECONDS);
       return result;
     } finally {
       executor.shutdownNow();
