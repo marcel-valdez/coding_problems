@@ -167,4 +167,53 @@ public class Chapter11Test extends ChapterTestBase {
       }
     }
   }
+
+  @Test
+  public void testPeopleLongestSorter() {
+    // given
+    Person[] people = people(
+      person(1, 1), person(3, 3), person(1, 2),
+      person(2, 1), person(3, 1), person(1, 3),
+      person(3, 2), person(4, 4), person(2, 3),
+      person(2, 1), person(4, 3), person(3, 4),
+      person(2, 2), person(4, 2), person(2, 4)
+    );
+    Person[] expected = people(
+      person(4, 4), person(3, 3), person(2, 2), person(1, 1)
+    );
+    PeopleLongestSorter sorter = new PeopleLongestSorter();
+    // when
+    structures.LinkedList<Person> actual = sorter.longestSort(people);
+    // then
+    Person[] actualArr = actual.toArray(Person.class);
+    areEqual(actualArr, expected);
+  }
+
+  private static Person person(int weight, int height) {
+    return new Person(weight, height);
+  }
+
+  private static Person[] people(Person ... people) {
+    return people;
+  }
+
+  @Test
+  public void testIntegerStreamer() {
+    // given
+    IntegerStreamer target = new IntegerStreamer();
+    // when
+    areEqual(target.rankOf(1), null);
+    target.stream(1);
+    areEqual(target.rankOf(1), 0);
+    target.stream(2);
+    areEqual(target.rankOf(1), 0);
+    areEqual(target.rankOf(2), 1);
+    target.stream(9);
+    areEqual(target.rankOf(9), 2);
+    target.stream(3);
+    areEqual(target.rankOf(3), 2);
+    target.stream(2);
+    areEqual(target.rankOf(2), 2);
+    areEqual(target.rankOf(3), 3);
+  }
 }

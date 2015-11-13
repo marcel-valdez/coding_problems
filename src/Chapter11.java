@@ -489,3 +489,194 @@ class MatrixIndex {
     return "(" + row + ", " + col + ")";
   }
 }
+
+
+/*
+ * Sorts Person objects by both their weight and height
+ * and gets the longes possible sort.
+ **/
+class PeopleLongestSorter {
+  public static int comparisonCount = 0;
+  // O(n^2)
+  public structures.LinkedList<Person> longestSort(Person[] people) {
+    comparisonCount = 0;
+    structures.LinkedList<Person> maxList = null;
+    Map<Person, structures.LinkedList<Person>> memo = new HashMap<>();
+    int currentMax = 0;
+    for(Person person : people) {
+      if(!memo.containsKey(person)) {
+        structures.LinkedList<Person> longestForPerson =
+          longestSort(currentMax, filterBy(person, people), memo, person);
+        if(maxList == null || maxList.size() < longestForPerson.size()) {
+          maxList = longestForPerson;
+          currentMax = maxList.size();
+        }
+      }
+    }
+
+    DEBUG.println("Total Comparisons: %s", comparisonCount);
+    DEBUG.println("Input size: %s", people.length);
+    DEBUG.println("Complexity: N^%2.1f", Math.log(comparisonCount) / Math.log(people.length));
+    return maxList;
+  }
+
+  // O(size(people) + size(people - 1) + size(people - 2) ... + size(people - N))
+  // O(n^2) --> for the FIRST time it is called.
+  private structures.LinkedList<Person> longestSort(
+    int currentMax,
+    List<Person> people,
+    Map<Person, structures.LinkedList<Person>> memo,
+    Person base) {
+
+    if(memo.containsKey(base)) { return memo.get(base); }
+
+    structures.LinkedList<Person> result = new structures.LinkedList<>();
+    result.add(base);
+
+    // there are no more people to add
+    if(people.size() == 0) { return result; }
+    // even if all people could be lined up, we could not beat the current max
+    if(currentMax > people.size()) { return result; } // but don't memo the result
+
+
+    structures.LinkedList<Person> longest = null;
+    for(Person other : people) {
+      comparisonCount++;
+      if(other.compare(base) == -1) {
+        structures.LinkedList<Person> otherLongest = null;
+        if(memo.containsKey(other)) {
+          otherLongest = memo.get(other);
+        } else {
+          otherLongest = longestSort(currentMax - 1, filterBy(other, people), memo, other);
+        }
+
+        if(longest == null || longest.size() < otherLongest.size()) {
+          longest = otherLongest;
+        }
+      }
+    }
+
+    if(longest != null) { result.appendAll(longest); }
+
+    memo.put(base, result);
+
+    return result;
+  }
+
+  // O(size(people))
+  private List<Person> filterBy(Person person, List<Person> people) {
+    List<Person> filtered = new ArrayList<>();
+    for(Person other : people) {
+      comparisonCount++;
+      if(other.compare(person) == -1) {
+        filtered.add(other);
+      }
+    }
+
+    return filtered;
+  }
+
+  // O(size(people))
+  private List<Person> filterBy(Person person, Person[] people) {
+    List<Person> filtered = new ArrayList<>();
+    for(Person other : people) {
+      comparisonCount++;
+      if(other.compare(person) == -1) {
+        filtered.add(other);
+      }
+    }
+
+    return filtered;
+  }
+}
+
+class Person {
+  private final int weight;
+  private final int height;
+
+  public Person(int weight, int height) {
+    this.weight = weight;
+    this.height = height;
+  }
+
+  /*
+   * @returns 0: equal
+   *          1: this is greater
+   *         -1: this is smaller
+   * Integer.MIN_VALUE: neither
+   **/
+  public int compare(Person other) {
+    if(this.weight > other.weight && this.height > other.height) {
+      return 1;
+    }
+
+    if(this.height < other.height && this.weight < other.weight) {
+      return -1;
+    }
+
+    if(this.height == other.height && this.weight == other.height) {
+      return 0;
+    }
+
+    return Integer.MIN_VALUE;
+  }
+
+  public boolean equals(Object otherObj) {
+    if(!(otherObj instanceof Person)) {
+      return false;
+    }
+
+    return compare((Person) otherObj) == 0;
+  }
+
+  public int hashCode() {
+    return (31 * weight) + (17 * height);
+  }
+}
+
+// TODO: Implement using a balanced binary search
+// tree, instead of SingleLinkNode, where we
+// know that if we traverse the balanced search tree
+// in-order, you can tell a node's rank, however
+// this would require for each node to know it's size
+// which may or may not be a O(1) operation in
+// a balanced search tree, since each node must know its
+// size via a variable.
+class IntegerStreamer {
+  private SingleLinkNode<Integer> head;
+  private Map<Integer, Integer> ranks = new HashMap<>();
+
+
+  // O(N) [number of streamed elements]
+  public void stream(Integer number) {
+    SingleLinkNode<Integer> newNode = new SingleLinkNode<>(number);
+    if(head == null) {
+      this.head = newNode;
+      ranks.put(number, 0);
+    } else {
+      SingleLinkNode<Integer> node = head;
+      SingleLinkNode<Integer> prev = null;
+      int rank = 0;
+      while(node != null && node.value() <= number) {
+        prev = node;
+        node = node.next();
+        rank++;
+      }
+
+      if(prev != null) { prev.next(newNode); }
+      newNode.next(node);
+      ranks.put(number, rank);
+
+      while(node != null) {
+        ranks.put(node.value(), rank + 1);
+        rank++;
+        node = node.next();
+      }
+    }
+  }
+
+  // O(1)
+  public Integer rankOf(Integer number) {
+    return ranks.get(number);
+  }
+}
