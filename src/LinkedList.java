@@ -17,6 +17,12 @@ public class LinkedList<T> {
     this.size++;
   }
 
+  public void appendAll(LinkedList<T> other) {
+    this.tail.next(other.head);
+    this.tail = other.tail;
+    this.size += other.size;
+  }
+
   public T removeFirst() {
     if(this.isEmpty()) { throw new RuntimeException("List is empty"); }
     T value = this.head.value();
@@ -72,6 +78,19 @@ public class LinkedList<T> {
   public int size() { return this.size; }
   public boolean isEmpty() { return this.size() == 0; }
 
+  public <K> K[] toArray(Class<K> itemClass) {
+    K[] array = (K[]) java.lang.reflect.Array.newInstance(itemClass, size());
+    SingleLinkNode<T> node = head;
+    int i = 0;
+    while(head != null) {
+      array[i] = (K) head.value();
+      head = head.next();
+      i++;
+    }
+
+    return array;
+  }
+
   public String toString() {
     if(isEmpty()) { return "<empty>"; }
     StringBuilder sb = new StringBuilder();
@@ -82,7 +101,17 @@ public class LinkedList<T> {
     return sb.toString();
   }
 
-  private boolean equals(T value, T other) {
+  public boolean equals(Object otherObj) {
+    if(!(otherObj instanceof LinkedList)) {
+      return false;
+    }
+
+    LinkedList<T> other = (LinkedList<T>) otherObj;
+
+    return this.size == other.size && equals(this.head, other.head);
+  }
+
+  private boolean equals(Object value, Object other) {
     if(value == null || other == null) { return value == other; }
 
     return value.equals(other);
