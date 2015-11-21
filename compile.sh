@@ -20,6 +20,11 @@ __compile() {
   javac -classpath "$JAR_CLASSPATH$OUTPUT_DIR" -d "$OUTPUT_DIR" $(find "$1" -iregex .*\.java)
 }
 
+# create classes directory if it does not exist
+if [ ! -e "$OUTPUT_DIR" ]; then
+    mkdir "$OUTPUT_DIR"
+fi
+
 # gather libraries, appends a : to the end
 JAR_CLASSPATH=$(find "$CLASSPATH" -iregex .*\.jar | tr '\n' ' ' |  sed 's/[ ][ ]*/:/g')
 # compile all source files
