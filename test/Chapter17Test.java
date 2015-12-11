@@ -270,7 +270,7 @@ public class Chapter17Test extends ChapterTestBase {
 
     areEqual(
       sentence,
-      link("i", "am", "marcel", "the", "greatest", "dota", "player", "in", "the", "world")
+      link("i", "am", "MARCEL", "the", "greatest", "DOTA", "player", "in", "the", "world")
     );
   }
 

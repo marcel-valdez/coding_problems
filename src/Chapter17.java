@@ -252,45 +252,6 @@ class BiNode {
 * - We have access to dictionary of words
 * - We assume that there are words not in that dictionary,
 *   such as name and proper nouns.
-*
-* I could approach this like:
-* A)
-*  - The dictionary is in a N-Ary tree (access is size(M) where M is length of word)
-*  - I try to find a word using the first letter in the dictionary
-* This is what I see:
-* We try top make a word with 1 letter, if we do make a word with 1 letter,
-* then we put that in the results, and continue trying to make a word with
-* the second letter, if we dont find a word with the next letter we issue a
-* recursion where we skip the next letter and also issue a recursion where
-* we try to find a word with the next 2 letters.
-*
-* It is important to look first for the cases where we do find a letter
-*
-* and we repeat the same process with N letters until we are out of letters.
-*
-*
- sentencify(results, letters, skip_count, current_idx, current_word)
- if current_idx == letters.length - 1
-   return (results, skip_count)
-
- next_word = current_word + letters[current_idx]
- current_results = copy(results)
- if exists(next_word)
-  current_results.add(next_word)
-  return sentencify(current_results, letters, skip_count, current_idx + 1, "")
- else
-  continue_sentence, continue_skip_count =
-    sentencify(results, letters, skip_count, current_idx + 1, next_word)
-  if continue_skip_count <= skip_count + 1
-    return (continue_sentence, continue_skip_count)
-
-  skip_sentence, skip_skip_count =
-    sentencify(results, letter, skip_count + 1, current_idx + 1, "")
-
-  if continue_skip_count <= skip_skip_count
-    return (continue_sentence, continue_skip_count)
-  else
-    return (skip_sentence, skip_skip_count)
 */
 
 class SentenceFinder {
@@ -324,126 +285,52 @@ class SentenceFinder {
   }
 
   public SingleLinkNode<String> sentencify(String letters) {
-    return sentencify(
-      new Memo(),
-      null,
-      letters,
-      0,
-      0,
-      new StringBuilder(letters.length())
-    ).results;
-  }
-
-  private static class Memo {
-    private final Map<Integer, Recursion> memo = new HashMap<>();
-
-    private boolean has(int idx) {
-      return memo.containsKey(idx);
-    }
-
-    private Recursion get(int idx) {
-      return memo.get(idx);
-    }
-
-    private void memo(int idx, Recursion result) {
-      memo.put(idx, result);
-    }
+    return sentencify(new Memo(), letters, 0, "").words;
   }
 
   private Recursion sentencify(
-    Memo memo,
-    SingleLinkNode<String> results,
-    String letters,
-    int skipCount,
-    int currentIdx,
-    StringBuilder currentWord) {
-    // We can memoize bsaed on the current index
-    if(currentIdx == letters.length()) {
-      if(currentWord.length() > 0) {
-        SingleLinkNode<String> skippedWord = new SingleLinkNode<>(currentWord.toString());
-        skippedWord.next(results);
-        DEBUG.println("skippedWord [%s]", currentWord);
-        return results(skippedWord, skipCount + currentWord.length());
-      } else {
-        return results(results, skipCount);
-      }
+    Memo memo, String letters, int index, String currentWord) {
+    if(memo.has(index, currentWord)) {
+      return memo.get(index, currentWord);
     }
 
-    //if(memo.has(currentIdx)) {
-    //  return memo.get(currentIdx);
-    //}
-
-    currentWord.append(letters.charAt(currentIdx));
-    String nextWord = currentWord.toString();
-    // word exists
-    if(exists(nextWord)) {
-      SingleLinkNode<String> next = new SingleLinkNode<>(nextWord);
-      next.next(results);
-      StringBuilder buffer =  new StringBuilder(letters.length() - currentIdx);
-      DEBUG.println("exists sentencify(%s, %s, %s)[%s]",
-        next, skipCount, currentIdx + 1, "<empty>");
-      Recursion restOfSentence =
-        sentencify(memo, next, letters, skipCount, currentIdx + 1, buffer);
-
-      Recursion sentence = restOfSentence;
-      if(sentence.skipCount > skipCount) {
-        // try to make bigger word
-        StringBuilder biggerBuffer = new StringBuilder(currentWord.toString());
-        Recursion biggerWord = sentencify(
-          memo, results, letters, skipCount, currentIdx + 1, biggerBuffer);
-        if(biggerWord.skipCount < sentence.skipCount) {
-          //DEBUG.print("biggerWord ");
-          sentence = biggerWord;
+    Recursion result = null;
+    if(index == letters.length()) {
+      if(exists(currentWord)) {
+        result = results(node(currentWord), 0);
+      } else {
+        if(currentWord.equals("")) {
+          result = results(null, 0);
         } else {
-          //DEBUG.print("foundWord [%s] ", nextWord);
+          result = results(node(currentWord.toUpperCase()), currentWord.length());
         }
       }
-
-      //DEBUG.println("memo(%s, %s) [%s]", currentIdx, sentence.results, sentence.skipCount);
-      memo.memo(currentIdx, sentence);
-      return sentence;
-    }
-
-    // word does not exist
-
-    // try making the word bigger
-    StringBuilder biggerBuffer = new StringBuilder(currentWord.toString());
-    DEBUG.println("biggerBuffer sentencify(%s, %s, %s)[%s]",
-      results, skipCount, currentIdx + 1, biggerBuffer);
-    Recursion biggerWordSentence = null;
-    if(currentWord.length() < words.longestWordSize()) {
-      biggerWordSentence = sentencify(memo, results, letters, skipCount, currentIdx + 1, biggerBuffer);
     } else {
-      String biggestWord = currentWord.toString() + letters.substring(currentIdx + 1);
-      SingleLinkNode<String> biggestWordLnk = new SingleLinkNode<>(biggestWord);
-      biggestWordLnk.next(results);
-      biggerWordSentence = results(biggestWordLnk, skipCount + biggestWord.length());
+      String nextWord = currentWord + letters.charAt(index);
+      Recursion cutoff = sentencify(memo, letters, index + 1, "");
+      Recursion extend = sentencify(memo, letters, index + 1, nextWord);
+      SingleLinkNode<String> cutoffRecursionNode = cutoff.words;
+
+      result = extend;
+      if(exists(nextWord)) {
+        if(cutoff.skipCount <= extend.skipCount) {
+          SingleLinkNode<String> cutoffNode = node(nextWord);
+          cutoffNode.next(cutoffRecursionNode);
+          result = results(cutoffNode, cutoff.skipCount);
+        }
+      } else if(cutoff.skipCount + nextWord.length() < extend.skipCount) {
+        SingleLinkNode<String> cutoffNode = node(nextWord.toUpperCase());
+        cutoffNode.next(cutoffRecursionNode);
+        result = results(cutoffNode, nextWord.length() + cutoff.skipCount);
+      }
     }
 
-    // try cutting off the word right here
-    SingleLinkNode<String> cutOffWord = new SingleLinkNode<>(currentWord.toString());
-    cutOffWord.next(results);
-    StringBuilder cutOffBuffer = new StringBuilder();
-    int cutOffSkipCount = skipCount + currentWord.length();
-    DEBUG.println("cutOffBuffer sentencify(%s, %s, %s)[<empty>]",
-      cutOffWord, cutOffSkipCount, currentIdx + 1);
-    Recursion cutOffSentence = sentencify(
-      memo, cutOffWord, letters, cutOffSkipCount, currentIdx + 1, cutOffBuffer);
+    memo.memo(index, currentWord, result);
+    return result;
+  }
 
-    // pick the sentence with the least skipped chars
-    if(cutOffSentence.skipCount < biggerWordSentence.skipCount) {
-      //DEBUG.print("cutOffSentence [%s] ", currentWord);
-      //DEBUG.println("memo(%s, %s) [%s]",
-      //              currentIdx, cutOffSentence.results, cutOffSentence.skipCount);
-      memo.memo(currentIdx, cutOffSentence);
-      return cutOffSentence;
-    } else {
-      //DEBUG.print("biggerWordSentence ");
-      //DEBUG.println("memo(%s, %s) [%s]",
-      //              currentIdx, biggerWordSentence.results, biggerWordSentence.skipCount);
-      memo.memo(currentIdx, biggerWordSentence);
-      return biggerWordSentence;
-    }
+  private SingleLinkNode<String> node(String value) {
+    return new SingleLinkNode<String>(value);
   }
 
   private boolean exists(String word) {
@@ -451,16 +338,33 @@ class SentenceFinder {
   }
 
   private static Recursion results(SingleLinkNode<String> results, int skipCount) {
-    Recursion recursion = new Recursion();
-    recursion.results = results;
-    recursion.skipCount = skipCount;
-
-    return recursion;
+    return new Recursion(results, skipCount);
   }
 
-
   private static class Recursion {
-    SingleLinkNode<String> results;
-    int skipCount;
+    final SingleLinkNode<String> words;
+    final int skipCount;
+    public Recursion(SingleLinkNode<String> words, int skipCount) {
+      this.skipCount = skipCount;
+      this.words = words;
+    }
+  }
+
+  private static class Memo {
+    private Map<String, Recursion> entries = new HashMap<>();
+    public void memo(int index, String currentWord, Recursion result) {
+      String key = currentWord + index;
+      entries.put(key, result);
+    }
+
+    public boolean has(int index, String currentWord) {
+      String key = currentWord + index;
+      return entries.containsKey(key);
+    }
+
+    public Recursion get(int index, String currentWord) {
+      String key = currentWord + index;
+      return entries.get(key);
+    }
   }
 }
