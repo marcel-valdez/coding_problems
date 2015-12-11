@@ -19,6 +19,7 @@ import structures.*;
 import test.*;
 
 public class Chapter17Test extends ChapterTestBase {
+
   @Test
   public void testInlineNumberSwap() {
     // given
@@ -250,5 +251,38 @@ public class Chapter17Test extends ChapterTestBase {
 
   BiNode binode(int value) {
     return new BiNode(value);
+  }
+
+  @Test
+  public void testSentenceFinder() {
+    Set<String> words = new HashSet<>();
+    words.add("i");
+    words.add("am");
+    words.add("the");
+    words.add("greatest");
+    words.add("player");
+    words.add("in");
+    words.add("world");
+
+    SentenceFinder finder = new SentenceFinder(words);
+    DEBUG.disable();
+    SingleLinkNode<String> sentence = finder.sentencify("iammarcelthegreatestdotaplayerintheworld");
+
+    areEqual(
+      sentence,
+      link("i", "am", "marcel", "the", "greatest", "dota", "player", "in", "the", "world")
+    );
+  }
+
+  private static SingleLinkNode<String> link(String ... words) {
+    SingleLinkNode<String> head = new SingleLinkNode<>(words[0]);
+    SingleLinkNode<String> tail = head;
+
+    for(int i = 1; i < words.length; i++) {
+      tail.next(new SingleLinkNode<>(words[i]));
+      tail = tail.next();
+    }
+
+    return head;
   }
 }

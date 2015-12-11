@@ -239,3 +239,228 @@ class BiNode {
   public BiNode second() { return this.second; }
 
 }
+
+/*
+* The input is a set of words all clumped up together, such as:
+* iammarcelthegreatestdotaplayerintheworld
+*
+* The expected output is the strinmg with the least unknown characters
+* in it, such that you minimize the letters that dont belong to a word:
+* i am MARCEL the greatest DOTA player in the world
+*
+* For this to work we assume:
+* - We have access to dictionary of words
+* - We assume that there are words not in that dictionary,
+*   such as name and proper nouns.
+*
+* I could approach this like:
+* A)
+*  - The dictionary is in a N-Ary tree (access is size(M) where M is length of word)
+*  - I try to find a word using the first letter in the dictionary
+* This is what I see:
+* We try top make a word with 1 letter, if we do make a word with 1 letter,
+* then we put that in the results, and continue trying to make a word with
+* the second letter, if we dont find a word with the next letter we issue a
+* recursion where we skip the next letter and also issue a recursion where
+* we try to find a word with the next 2 letters.
+*
+* It is important to look first for the cases where we do find a letter
+*
+* and we repeat the same process with N letters until we are out of letters.
+*
+*
+ sentencify(results, letters, skip_count, current_idx, current_word)
+ if current_idx == letters.length - 1
+   return (results, skip_count)
+
+ next_word = current_word + letters[current_idx]
+ current_results = copy(results)
+ if exists(next_word)
+  current_results.add(next_word)
+  return sentencify(current_results, letters, skip_count, current_idx + 1, "")
+ else
+  continue_sentence, continue_skip_count =
+    sentencify(results, letters, skip_count, current_idx + 1, next_word)
+  if continue_skip_count <= skip_count + 1
+    return (continue_sentence, continue_skip_count)
+
+  skip_sentence, skip_skip_count =
+    sentencify(results, letter, skip_count + 1, current_idx + 1, "")
+
+  if continue_skip_count <= skip_skip_count
+    return (continue_sentence, continue_skip_count)
+  else
+    return (skip_sentence, skip_skip_count)
+*/
+
+class SentenceFinder {
+  private static class Dictionary {
+    private final Set<String> words;
+    private final int longestWordSize;
+
+    public Dictionary(Set<String> words) {
+      this.words = words;
+      int longestWordSize = 0;
+      for(String word : words) {
+        if(word.length() > longestWordSize) {
+          longestWordSize = word.length();
+        }
+      }
+      this.longestWordSize = longestWordSize;
+    }
+
+    public boolean contains(String word) {
+      return this.words.contains(word);
+    }
+
+    public int longestWordSize() {
+      return longestWordSize;
+    }
+  }
+
+  private final Dictionary words;
+  public SentenceFinder(Set<String> words) {
+    this.words = new Dictionary(words);
+  }
+
+  public SingleLinkNode<String> sentencify(String letters) {
+    return sentencify(
+      new Memo(),
+      null,
+      letters,
+      0,
+      0,
+      new StringBuilder(letters.length())
+    ).results;
+  }
+
+  private static class Memo {
+    private final Map<Integer, Recursion> memo = new HashMap<>();
+
+    private boolean has(int idx) {
+      return memo.containsKey(idx);
+    }
+
+    private Recursion get(int idx) {
+      return memo.get(idx);
+    }
+
+    private void memo(int idx, Recursion result) {
+      memo.put(idx, result);
+    }
+  }
+
+  private Recursion sentencify(
+    Memo memo,
+    SingleLinkNode<String> results,
+    String letters,
+    int skipCount,
+    int currentIdx,
+    StringBuilder currentWord) {
+    // We can memoize bsaed on the current index
+    if(currentIdx == letters.length()) {
+      if(currentWord.length() > 0) {
+        SingleLinkNode<String> skippedWord = new SingleLinkNode<>(currentWord.toString());
+        skippedWord.next(results);
+        DEBUG.println("skippedWord [%s]", currentWord);
+        return results(skippedWord, skipCount + currentWord.length());
+      } else {
+        return results(results, skipCount);
+      }
+    }
+
+    //if(memo.has(currentIdx)) {
+    //  return memo.get(currentIdx);
+    //}
+
+    currentWord.append(letters.charAt(currentIdx));
+    String nextWord = currentWord.toString();
+    // word exists
+    if(exists(nextWord)) {
+      SingleLinkNode<String> next = new SingleLinkNode<>(nextWord);
+      next.next(results);
+      StringBuilder buffer =  new StringBuilder(letters.length() - currentIdx);
+      DEBUG.println("exists sentencify(%s, %s, %s)[%s]",
+        next, skipCount, currentIdx + 1, "<empty>");
+      Recursion restOfSentence =
+        sentencify(memo, next, letters, skipCount, currentIdx + 1, buffer);
+
+      Recursion sentence = restOfSentence;
+      if(sentence.skipCount > skipCount) {
+        // try to make bigger word
+        StringBuilder biggerBuffer = new StringBuilder(currentWord.toString());
+        Recursion biggerWord = sentencify(
+          memo, results, letters, skipCount, currentIdx + 1, biggerBuffer);
+        if(biggerWord.skipCount < sentence.skipCount) {
+          //DEBUG.print("biggerWord ");
+          sentence = biggerWord;
+        } else {
+          //DEBUG.print("foundWord [%s] ", nextWord);
+        }
+      }
+
+      //DEBUG.println("memo(%s, %s) [%s]", currentIdx, sentence.results, sentence.skipCount);
+      memo.memo(currentIdx, sentence);
+      return sentence;
+    }
+
+    // word does not exist
+
+    // try making the word bigger
+    StringBuilder biggerBuffer = new StringBuilder(currentWord.toString());
+    DEBUG.println("biggerBuffer sentencify(%s, %s, %s)[%s]",
+      results, skipCount, currentIdx + 1, biggerBuffer);
+    Recursion biggerWordSentence = null;
+    if(currentWord.length() < words.longestWordSize()) {
+      biggerWordSentence = sentencify(memo, results, letters, skipCount, currentIdx + 1, biggerBuffer);
+    } else {
+      String biggestWord = currentWord.toString() + letters.substring(currentIdx + 1);
+      SingleLinkNode<String> biggestWordLnk = new SingleLinkNode<>(biggestWord);
+      biggestWordLnk.next(results);
+      biggerWordSentence = results(biggestWordLnk, skipCount + biggestWord.length());
+    }
+
+    // try cutting off the word right here
+    SingleLinkNode<String> cutOffWord = new SingleLinkNode<>(currentWord.toString());
+    cutOffWord.next(results);
+    StringBuilder cutOffBuffer = new StringBuilder();
+    int cutOffSkipCount = skipCount + currentWord.length();
+    DEBUG.println("cutOffBuffer sentencify(%s, %s, %s)[<empty>]",
+      cutOffWord, cutOffSkipCount, currentIdx + 1);
+    Recursion cutOffSentence = sentencify(
+      memo, cutOffWord, letters, cutOffSkipCount, currentIdx + 1, cutOffBuffer);
+
+    // pick the sentence with the least skipped chars
+    if(cutOffSentence.skipCount < biggerWordSentence.skipCount) {
+      //DEBUG.print("cutOffSentence [%s] ", currentWord);
+      //DEBUG.println("memo(%s, %s) [%s]",
+      //              currentIdx, cutOffSentence.results, cutOffSentence.skipCount);
+      memo.memo(currentIdx, cutOffSentence);
+      return cutOffSentence;
+    } else {
+      //DEBUG.print("biggerWordSentence ");
+      //DEBUG.println("memo(%s, %s) [%s]",
+      //              currentIdx, biggerWordSentence.results, biggerWordSentence.skipCount);
+      memo.memo(currentIdx, biggerWordSentence);
+      return biggerWordSentence;
+    }
+  }
+
+  private boolean exists(String word) {
+    return words.contains(word);
+  }
+
+  private static Recursion results(SingleLinkNode<String> results, int skipCount) {
+    Recursion recursion = new Recursion();
+    recursion.results = results;
+    recursion.skipCount = skipCount;
+
+    return recursion;
+  }
+
+
+  private static class Recursion {
+    SingleLinkNode<String> results;
+    int skipCount;
+  }
+}
