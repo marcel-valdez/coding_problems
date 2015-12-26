@@ -875,7 +875,7 @@ class BoxStacker {
   }
 
   public int sumOfHeights(List<Box> boxes) {
-    return boxes.stream().mapToInt(b -> b.h()).sum();
+    return boxes.stream().mapToInt(Box::h).sum();
   }
 
   private static RecursionResult result(SingleLinkNode<Box> stack, int height) {
