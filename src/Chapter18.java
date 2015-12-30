@@ -33,4 +33,27 @@ class Shuffler {
 
     return shuffled;
   }
+  
+  class RandomSetGenerator {
+    // Assumption: source length must be greater than or equal to output size
+    // Assumption: No repeated numbers are desired
+    public Set<Integer> generate(int[] source, int outputSize) {
+      Random random = new Random(System.nanoTime());
+      List<Integer> indices = new ArrayList<>();
+      // con: requires O(N) memory
+      for(int i = 0; i < source.length; i++) {
+        indices.add(i);
+      }
+
+      Set<Integer> result = new HashSet<>();
+      for(int i = 0; i < outputSize; i++) {
+        int indicesIndex = random.nextInt(indices.size());
+        int sourceIndex = indices.get(indicesIndex);
+        result.add(source[sourceIndex]);
+        indices.remove(indicesIndex);
+      }
+
+      return result;
+    }
+  }
 }
