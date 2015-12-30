@@ -255,6 +255,8 @@ class BiNode {
 */
 
 class SentenceFinder {
+  private int iterations = 0;
+
   private static class Dictionary {
     private final Set<String> words;
     private final int longestWordSize;
@@ -285,11 +287,16 @@ class SentenceFinder {
   }
 
   public SingleLinkNode<String> sentencify(String letters) {
-    return sentencify(new Memo(), letters, 0, "").words;
+    Recursion result =  sentencify(new Memo(), letters, 0, "");
+    DEBUG.println("Input length: %s", letters.length());
+    DEBUG.println("Iterations: %s", iterations);
+    DEBUG.println("Complexity: N^%2.1f", Math.log(iterations) / Math.log(letters.length()));
+    return result.words;
   }
 
   private Recursion sentencify(
     Memo memo, String letters, int index, String currentWord) {
+    iterations++;
     if(memo.has(index, currentWord)) {
       return memo.get(index, currentWord);
     }
