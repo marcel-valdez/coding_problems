@@ -13,13 +13,24 @@ class Shuffler {
   private final Random random = new Random(System.nanoTime());
   
   public <T> T[] shuffle(T ... elements) {
+    for(int i = 0; i <= elements.length - 2; i++) {
+      int swapIndex = random.nextInt(elements.length - i);
+      T temp = elements[i];
+      elements[i] = elements[swapIndex];
+      elements[swapIndex] = temp;
+    }
+
+    return elements;
+  }
+
+  public <T> T[] shuffleNaive(T ... elements) {
     //1 Build an array of indices of the same size as elements
     T[] shuffled = (T[]) Array.newInstance(elements[0].getClass(), elements.length);
     List<Integer> indices = new ArrayList<>();
     for(int i = 0; i < elements.length; i++) {
       indices.add(i);
     }
-    
+
     int shuffledElementsCounter = 0;
     while(indices.size() > 0) {
      int randomIndex = random.nextInt(indices.size()); 
