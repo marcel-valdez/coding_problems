@@ -86,4 +86,29 @@ public class Chapter18Test extends ChapterTestBase {
 
     Assert.assertEquals(-1, finder.apply("Z", "T").intValue());
   }
+  
+  @Test
+  public void testSentenceChecker() {
+    checkSentenceChecker("ilikeicecreamz", true);
+    checkSentenceChecker("ilikeicecream", true);
+    checkSentenceChecker("ilikeicecreamzz", false);
+    checkSentenceChecker("b", false);
+    checkSentenceChecker("", false);
+  }
+
+  public void checkSentenceChecker(String sentence, boolean expected) {
+    HashSet<String> dictionary = new HashSet<>();
+    dictionary.add("i");
+    dictionary.add("like");
+    dictionary.add("ice");
+    dictionary.add("cream");
+    dictionary.add("icecream");
+    dictionary.add("creamz");
+    
+    SentenceChecker target = new SentenceChecker();
+    // When
+    boolean actual = target.isValidSentence(sentence, dictionary);
+    // Then
+    Assert.assertEquals(expected, actual);
+  }
 }

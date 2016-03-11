@@ -177,3 +177,47 @@ class WordDistanceFinder {
     };
   }
 }
+
+// Tell me if the sentence is valid according to words available in a dictionary
+class SentenceChecker {
+  public SentenceChecker() {
+  }
+
+  public boolean isValidSentence(String sentence, HashSet<String> dictionary) {
+    return isValidSentence(new HashMap<>(), sentence, dictionary, 0);
+  }
+
+  private boolean isValidSentence(
+    Map<Integer, Boolean> memo,
+    String sentence,
+    HashSet<String> dictionary,
+    int index
+  ) {
+
+    if(sentence.length() == 0) {
+      return false;
+    }
+
+    if(index == sentence.length()) {
+      return true;
+    }
+
+    if(memo.containsKey(index)) {
+      return memo.get(index);
+    }
+
+    // I can iterate over the dictionary or iterate over the sentence
+    for(int currentIndex = index + 1; currentIndex <= sentence.length(); currentIndex++) {
+      String word = sentence.substring(index, currentIndex);
+      if(dictionary.contains(word)) {
+        if(isValidSentence(memo, sentence, dictionary, currentIndex)) {
+          memo.put(index, true);
+          return true;
+        }
+      }
+    }
+
+    memo.put(index, false);
+    return false;
+  }
+}
