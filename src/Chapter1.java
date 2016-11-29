@@ -332,7 +332,7 @@ class StringRotationChecker {
     }
 
     String shifted = shift(input, shift);
-    return rotation.indexOf(shifted) != -1;
+    return rotation.equals(shifted);
   }
 
   private int findShift(String input, String rotation) {
